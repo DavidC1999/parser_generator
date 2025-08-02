@@ -23,37 +23,35 @@ static void expect_and_consume_token(token_list* tokens, token_id id) {
     consume_token(tokens);
 }
 
-static node* parse_number(memory_arena* arena, token_list* tokens) {
+node* parse_object(memory_arena* arena, token_list* tokens) {
     node* ret_val = arena_alloc(arena, sizeof(node));
-    expect_token(tokens, TOKEN_INTLIT);
-    ret_val->id = NODE_TYPE_NUMBER;
-    ret_val->number.value = *(int64_t*)tokens->it->arg;
-
-    return ret_val;
-}
-
-static node* parse_member(memory_arena* arena, token_list* tokens) {
-    node* ret_val = arena_alloc(arena, sizeof(node));
-    ret_val->id = NODE_TYPE_MEMBER;
-    if (tokens->it->id != TOKEN_STRLIT) {
-        return NULL;
-    }
-    ret_val->member.name = (const char*) tokens->it->arg;
+    ret_val->id = NODE_OBJECT;
+    expect_token(tokens, TOKEN_OPEN_CURLY);
     consume_token(tokens);
-    expect_and_consume_token(tokens, TOKEN_COLON);
-    ret_val->member.value = parse_number(arena, tokens);
+    ret_val->object.children[0] = parse_member(arena, tokens);
+    expect_token(tokens, TOKEN_CLOSE_CURLY);
+    consume_token(tokens);
     return ret_val;
 }
 
-static node* parse_object(memory_arena* arena, token_list* tokens) {
-    expect_and_consume_token(tokens, TOKEN_OPEN_CURLY);
+node* parse_member(memory_arena* arena, token_list* tokens) {
     node* ret_val = arena_alloc(arena, sizeof(node));
-    ret_val->id = NODE_TYPE_OBJECT;
-    ret_val->object.child = parse_member(arena, tokens);
-
+    ret_val->id = NODE_MEMBER;
+    expect_token(tokens, TOKEN_STRLIT);
+    ret_val->member.name = (const char*)tokens->it->arg;
+    consume_token(tokens);
+    expect_token(tokens, TOKEN_COLON);
+    consume_token(tokens);
+    ret_val->member.children[0] = parse_number(arena, tokens);
     return ret_val;
 }
 
-node* parse(memory_arena* arena, token_list* tokens) {
-    return parse_object(arena, tokens);
+node* parse_number(memory_arena* arena, token_list* tokens) {
+    node* ret_val = arena_alloc(arena, sizeof(node));
+    ret_val->id = NODE_NUMBER;
+    expect_token(tokens, TOKEN_INTLIT);
+    ret_val->number.value = *(int64_t*)tokens->it->arg;
+    consume_token(tokens);
+    return ret_val;
 }
+

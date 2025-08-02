@@ -25,7 +25,7 @@ int main() {
     token_list tokens = {0};
     tokenize(&arena, &tokens, buffer);
 
-    node* root = parse(&arena, &tokens);
+    node* root = parse_object(&arena, &tokens);
 
     return 0;
 }
