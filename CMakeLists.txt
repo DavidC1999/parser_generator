@@ -3,4 +3,17 @@ project(parser_generator C)
 
 set(CMAKE_C_STANDARD 23)
 
-add_executable(parser_generator main.c tokenizer.c tokenizer.h memory_arena.h memory_arena.c re.c re.h)
+include(FetchContent)
+
+# Fetch the PCRE library
+FetchContent_Declare(
+        pcre2
+        GIT_REPOSITORY https://github.com/PCRE2Project/pcre2.git
+        GIT_TAG        pcre2-10.45  # You can specify a specific tag or branch
+)
+
+FetchContent_MakeAvailable(pcre2)
+
+add_executable(parser_generator main.c tokenizer.c tokenizer.h memory_arena.h memory_arena.c)
+
+target_link_libraries(parser_generator pcre)

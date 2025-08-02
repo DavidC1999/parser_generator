@@ -4,6 +4,7 @@
 #include "memory_arena.h"
 
 typedef enum {
+    TOKEN_NONE,
     TOKEN_OPEN_CURLY,
     TOKEN_CLOSE_CURLY,
     TOKEN_COLON,
@@ -23,6 +24,6 @@ typedef struct {
     token* it;
 } token_list;
 
-const char* tokenize(memory_arena* arena, token_list* tokens, const char* text);
+void tokenize(memory_arena* arena, token_list* tokens, const char* text);
 
 #endif //TOKENIZER_H

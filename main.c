@@ -19,11 +19,10 @@ int main() {
 
     printf("%s", buffer);
 
-    memory_arena* arena = arena_create(100);
+    uint8_t arena_buffer[1024];
+    memory_arena arena = {.size = 0, .buffer = arena_buffer, .capacity = 1024};
     token_list output = {0};
-    tokenize(arena, &output, buffer);
-
-    arena_destroy(arena);
+    tokenize(&arena, &output, buffer);
 
     return 0;
 }

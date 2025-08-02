@@ -17,12 +17,8 @@ typedef struct {
     uint8_t* buffer;
 } memory_arena;
 
-memory_arena* arena_create(size_t initial_capacity);
-
 void* arena_alloc(memory_arena* arena, size_t size);
 
 void arena_reset(memory_arena* arena);
-
-void arena_destroy(memory_arena* arena);
 
 #endif //MEMORY_ARENA_H
