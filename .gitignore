@@ -1,2 +1,4 @@
 .idea
 cmake-build-debug
+parser.c
+parser.h

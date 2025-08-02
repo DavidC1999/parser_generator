@@ -1,3 +1,5 @@
+// THIS CODE HAS BEEN GENERATED. DO NOT MODIFY BY HAND.
+
 #include <stdlib.h>
 #include "parser.h"
 #include "memory_arena.h"
