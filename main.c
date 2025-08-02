@@ -2,6 +2,7 @@
 #include <malloc.h>
 
 #include "tokenizer.h"
+#include "parser.h"
 
 int main() {
     printf("Hello, World!\n");
@@ -19,10 +20,12 @@ int main() {
 
     printf("%s", buffer);
 
-    uint8_t arena_buffer[1024];
-    memory_arena arena = {.size = 0, .buffer = arena_buffer, .capacity = 1024};
-    token_list output = {0};
-    tokenize(&arena, &output, buffer);
+    uint8_t arena_buffer[2048];
+    memory_arena arena = {.size = 0, .buffer = arena_buffer, .capacity = 2048};
+    token_list tokens = {0};
+    tokenize(&arena, &tokens, buffer);
+
+    node* root = parse(&arena, &tokens);
 
     return 0;
 }

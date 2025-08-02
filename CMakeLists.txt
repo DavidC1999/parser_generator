@@ -14,6 +14,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(pcre2)
 
-add_executable(parser_generator main.c tokenizer.c tokenizer.h memory_arena.h memory_arena.c)
+add_executable(parser_generator main.c tokenizer.c tokenizer.h memory_arena.h memory_arena.c parser.c parser.h)
 
 target_link_libraries(parser_generator pcre)

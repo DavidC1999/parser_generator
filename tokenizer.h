@@ -16,6 +16,7 @@ typedef struct token {
     struct token* next;
     token_id id;
     void* arg;
+    int32_t line;
 } token;
 
 typedef struct {

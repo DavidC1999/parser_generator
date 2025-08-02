@@ -36,6 +36,7 @@ static void new_token(tokenizer* me, token_id id, void* arg) {
     item->id = id;
     item->arg = arg;
     item->next = NULL;
+    item->line = me->line;
     append(me->list, item);
 }
 
@@ -186,4 +187,6 @@ void tokenize(memory_arena* arena, token_list* tokens, const char* text) {
             panic(&me, error_message);
         }
     }
+
+    tokens->it = tokens->head;
 }
