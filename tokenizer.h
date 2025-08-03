@@ -2,12 +2,14 @@
 #define TOKENIZER_H
 
 #include "memory_arena.h"
+#include "linked_list.h"
 
 typedef enum {
     TOKEN_NONE,
     TOKEN_OPEN_CURLY,
     TOKEN_CLOSE_CURLY,
     TOKEN_COLON,
+    TOKEN_COMMA,
     TOKEN_STRLIT,
     TOKEN_INTLIT
 } token_id;
@@ -19,12 +21,6 @@ typedef struct token {
     int32_t line;
 } token;
 
-typedef struct {
-    token* head;
-    token* tail;
-    token* it;
-} token_list;
-
-void tokenize(memory_arena* arena, token_list* tokens, const char* text);
+void tokenize(memory_arena* arena, linked_list* output, const char* text);
 
 #endif //TOKENIZER_H

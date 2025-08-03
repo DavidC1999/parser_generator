@@ -16,6 +16,15 @@ FetchContent_MakeAvailable(pcre2)
 
 execute_process(COMMAND python3 ${CMAKE_SOURCE_DIR}/generator/generate.py ${CMAKE_SOURCE_DIR})
 
-add_executable(parser_generator main.c tokenizer.c tokenizer.h memory_arena.h memory_arena.c parser.c parser.h)
+add_executable(parser_generator
+        main.c
+        tokenizer.c
+        tokenizer.h
+        memory_arena.h
+        memory_arena.c
+        parser.c
+        parser.h
+        linked_list.c
+        linked_list.h)
 
 target_link_libraries(parser_generator pcre)

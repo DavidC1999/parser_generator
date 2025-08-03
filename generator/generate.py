@@ -2,11 +2,7 @@ import sys
 import os
 from typing import List
 
-print("-------------------------------")
-print("-------------------------------")
-print("My awesome code generator")
-print("-------------------------------")
-print("-------------------------------")
+print("Generating parser....")
 
 class Type:
     STRING = 0
@@ -23,6 +19,9 @@ class Atom:
     
     def is_token(self):
         return self.atom_type == "token"
+    
+    def is_repeat(self):
+        return self.atom_type == "repeat"
     
     def is_noderef(self):
         return self.atom_type == "noderef"
@@ -47,12 +46,6 @@ class Node:
         self.expression = expression
 
         noderegistrations[name] = self
-    
-    def children(self):
-        return filter(lambda a: a.is_noderef(), self.expression)
-
-    def child_count(self):
-        return sum(type(e) == NodeReference for e in node.expression)
 
 class NodeReference(Atom):
     def __init__(self, name: str):
@@ -62,8 +55,14 @@ class NodeReference(Atom):
     def get_node(self) -> Node:
         return noderegistrations[self.name]
 
+class Repeat(Atom):
+    def __init__(self, *atoms: List[Atom]):
+        super().__init__("repeat")
+        self.atoms = atoms
+
 token_open_curly = TokenType("OPEN_CURLY")
 token_close_curly = TokenType("CLOSE_CURLY")
+token_comma = TokenType("COMMA")
 token_colon = TokenType("COLON")
 token_strlit = TokenType("STRLIT", "const char*")
 token_intlit = TokenType("INTLIT", "int64_t")
@@ -75,6 +74,7 @@ grammar = [
         expression=[
            Token(token_open_curly),
            NodeReference("member"),
+           Repeat(Token(token_comma), NodeReference("member")),
            Token(token_close_curly),
         ]
     ),
@@ -106,33 +106,47 @@ parse_functions = ""
 def node_enum_name(node: Node):
     return f"NODE_{node.name.upper()}"
 
+def parse_atom(indent_num:int, node: Node, atom: Atom):
+    code = ""
+    indent = " " * indent_num
+    if atom.is_token():
+        token: Token = atom
+        code += f"{indent}expect_token(tokens, TOKEN_{token.type.name.upper()});\n"
+        if token.binds_to != None:
+            field = next(f for f in node.fields if f.name == token.binds_to)
+            if (field.type.endswith("*")): # is pointer
+                code += f"{indent}ret_val->{node.name}.{field.name} = ({field.type})current_token(tokens)->arg;\n"
+            else:
+                code += f"{indent}ret_val->{node.name}.{field.name} = *({field.type}*)current_token(tokens)->arg;\n"
+        code += f"{indent}consume_token(tokens);\n"
+    elif atom.is_noderef():
+        referenced_node = atom.get_node()
+        code += f"{indent}linked_list_append(&ret_val->{node.name}.children, parse_{referenced_node.name}(arena, tokens));\n"
+    elif atom.is_repeat():
+        if not atom.atoms[0].is_token():
+            raise "First atom of repeat atom must be a token (for now)"
+        token = atom.atoms[0]
+        code += f"{indent}while (current_token(tokens)->id == TOKEN_{token.type.name.upper()}) {{\n"
+        for repeated_atom in atom.atoms:
+            code += parse_atom(indent_num + 4, node, repeated_atom)
+        code += f"{indent}}}\n"
+        
+    return code
+
+
 def generate_parse_method(node: Node):
     global parse_prototypes
     global parse_functions
 
-    parse_prototypes += f"node* parse_{node.name}(memory_arena* arena, token_list* tokens);\n"
+    parse_prototypes += f"node* parse_{node.name}(memory_arena* arena, linked_list* tokens);\n"
 
-    code =  f"node* parse_{node.name}(memory_arena* arena, token_list* tokens) {{\n"
+    code =  f"node* parse_{node.name}(memory_arena* arena, linked_list* tokens) {{\n"
     code +=  "    node* ret_val = arena_alloc(arena, sizeof(node));\n"
     code += f"    ret_val->id = {node_enum_name(node)};\n"
-
-    child_counter = 0
+    code += f"    linked_list_clear(&ret_val->{node.name}.children);\n"
 
     for atom in node.expression:
-        if atom.is_token():
-            token: Token = atom
-            code += f"    expect_token(tokens, TOKEN_{token.type.name.upper()});\n"
-            if token.binds_to != None:
-                field = next(f for f in node.fields if f.name == token.binds_to)
-                if (field.type.endswith("*")): # is pointer
-                    code += f"    ret_val->{node.name}.{field.name} = ({field.type})tokens->it->arg;\n"
-                else:
-                    code += f"    ret_val->{node.name}.{field.name} = *({field.type}*)tokens->it->arg;\n"
-            code += "    consume_token(tokens);\n"
-        elif atom.is_noderef():
-            referenced_node = atom.get_node()
-            code += f"    ret_val->{node.name}.children[{child_counter}] = parse_{referenced_node.name}(arena, tokens);\n"
-            child_counter += 1
+        code += parse_atom(4, node, atom)
         
     code += "    return ret_val;\n"
     code += "}\n\n"
@@ -143,6 +157,7 @@ def generate_parse_method(node: Node):
 enum = "typedef enum {\n"
 
 struct = """typedef struct node {
+    struct node* next;
     node_id id;
     
     union {\n"""
@@ -154,8 +169,7 @@ for node in grammar:
     for field in node.fields:
         struct += f"            {field.type} {field.name};\n"
     
-    if (node.child_count() > 0):
-        struct += f"            struct node* children[{node.child_count()}];\n"
+    struct += f"            linked_list children;\n"
     struct += f"        }} {node.name};\n\n"
 
     generate_parse_method(node)

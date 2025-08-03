@@ -3,6 +3,7 @@
 
 #include "tokenizer.h"
 #include "parser.h"
+//#include "parser.h"
 
 int main() {
     printf("Hello, World!\n");
@@ -14,15 +15,16 @@ int main() {
     fseek (f, 0, SEEK_END);
     size_t length = ftell (f);
     fseek (f, 0, SEEK_SET);
-    char* buffer = malloc(length);
+    char* buffer = malloc(length + 1);
     fread (buffer, 1, length, f);
     fclose (f);
+    buffer[length] = '\0';
 
     printf("%s", buffer);
 
     uint8_t arena_buffer[2048];
     memory_arena arena = {.size = 0, .buffer = arena_buffer, .capacity = 2048};
-    token_list tokens = {0};
+    linked_list tokens = {0};
     tokenize(&arena, &tokens, buffer);
 
     node* root = parse_object(&arena, &tokens);

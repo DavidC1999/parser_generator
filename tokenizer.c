@@ -8,6 +8,7 @@
 
 #include "tokenizer.h"
 #include "memory_arena.h"
+#include "linked_list.h"
 
 #include <pcre.h>
 
@@ -15,21 +16,9 @@
 
 typedef struct {
     memory_arena* arena;
-    token_list* list;
+    linked_list* token_list;
     int32_t line;
 } tokenizer;
-
-static void append(token_list* list, token* item) {
-    if (list->head == NULL) {
-        list->head = item;
-        list->tail = item;
-        return;
-    }
-
-    token* old_tail = list->tail;
-    old_tail->next = item;
-    list->tail = item;
-}
 
 static void new_token(tokenizer* me, token_id id, void* arg) {
     token* item = arena_alloc(me->arena, sizeof(token));
@@ -37,7 +26,7 @@ static void new_token(tokenizer* me, token_id id, void* arg) {
     item->arg = arg;
     item->next = NULL;
     item->line = me->line;
-    append(me->list, item);
+    linked_list_append(me->token_list, (list_item*)item);
 }
 
 static bool is_digit(char c) {
@@ -80,12 +69,12 @@ void panic(tokenizer* me, const char* message) {
     exit(1);
 }
 
-void tokenize(memory_arena* arena, token_list* tokens, const char* text) {
+void tokenize(memory_arena* arena, linked_list* output, const char* text) {
     const char* current = text;
 
     tokenizer me = {
             .arena = arena,
-            .list = tokens,
+            .token_list = output,
             .line = 1,
     };
 
@@ -107,6 +96,11 @@ void tokenize(memory_arena* arena, token_list* tokens, const char* text) {
             {
                     .id = TOKEN_COLON,
                     .pattern = "^:",
+                    .argument_handler = NULL,
+            },
+            {
+                    .id = TOKEN_COMMA,
+                    .pattern = "^,",
                     .argument_handler = NULL,
             },
             {
@@ -187,6 +181,4 @@ void tokenize(memory_arena* arena, token_list* tokens, const char* text) {
             panic(&me, error_message);
         }
     }
-
-    tokens->it = tokens->head;
 }
