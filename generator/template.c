@@ -21,7 +21,7 @@ static void consume_token(linked_list* tokens) {
 
 static void expect_token(linked_list* tokens, token_id id) {
     if (current_token(tokens)->id != id) {
-        panic("Unexpected token", tokens->current);
+        panic("Unexpected token", (token*)tokens->current);
     }
 }
 
