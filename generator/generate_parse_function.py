@@ -39,8 +39,23 @@ def _generate_parse_atom(indent_num:int, node: Node, atom: Atom):
                 code += f"{indent}ret_val->{node.name}.{field.name} = *({field.type}*)current_token(tokens)->arg;\n"
         code += f"{indent}consume_token(tokens);\n"
     elif atom.is_noderef():
+        node_reference: NodeReference = atom
         referenced_node = atom.get_node()
-        code += f"{indent}linked_list_append((linked_list*)&ret_val->subnodes, (list_item*)parse_{referenced_node.name}(arena, tokens));\n"
+        if node_reference.binds_to is None:
+            code += f"{indent}parse_{referenced_node.name}(arena, tokens);\n"
+        else:
+            field = next((f for f in node.fields if f.name == node_reference.binds_to), None)
+            parse_node_call = f"parse_{referenced_node.name}(arena, tokens)"
+
+            if field is None:
+                pass
+            elif field.is_node():
+                code += f"{indent}ret_val->{node.name}.{field.name} = {parse_node_call};\n"
+            elif field.is_node_list():
+                code += f"{indent}linked_list_append((linked_list*)&ret_val->{node.name}.{field.name}, (list_item*){parse_node_call});\n"
+            else:
+                raise "binds_to of NodeReference must refer to a node-compatible type"
+
     elif atom.is_repeat():
         if not atom.atoms[0].is_token():
             raise "First atom of repeat atom must be a token (for now)"
@@ -70,7 +85,8 @@ def _generate_parse_atom(indent_num:int, node: Node, atom: Atom):
 
                 code += f"{indent}    case {enum_name}:\n"
 
-            code += f"{indent}        linked_list_append((linked_list*)&ret_val->subnodes, (list_item*)parse_{referenced_node.name}(arena, tokens));\n"
+            # code += f"{indent}        linked_list_append((linked_list*)&ret_val->subnodes, (list_item*)parse_{referenced_node.name}(arena, tokens));\n"
+            code += _generate_parse_atom(indent_num + 8, node, referenced_node)
             code += f"{indent}        break;\n"
         
         code += f"{indent}    default:\n"
@@ -86,7 +102,10 @@ def generate_parse_function(node: Node):
     code =  f"node* parse_{node.name}(memory_arena* arena, linked_list* tokens) {{\n"
     code +=  "    node* ret_val = arena_alloc(arena, sizeof(node));\n"
     code += f"    ret_val->id = {node_enum_name(node)};\n"
-    code += f"    linked_list_clear((linked_list*)&ret_val->subnodes);\n"
+
+    for field in node.fields:
+        if field.is_node_list():
+            code += f"    linked_list_clear((linked_list*)&ret_val->{node.name}.{field.name});\n"
 
     for atom in node.expression:
         code += _generate_parse_atom(4, node, atom)

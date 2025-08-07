@@ -1,84 +1,4 @@
-from typing import List
-
-class Type:
-    STRING = 0
-    NUMBER = 1
-
-class TokenType:
-    def __init__(self, name: str, value_type: str | None = None):
-        self.name = name
-        self.value_type = value_type
-
-class Atom:
-    def __init__(self, atom_type):
-        self.atom_type = atom_type
-    
-    def is_token(self):
-        return self.atom_type == "token"
-    
-    def is_repeat(self):
-        return self.atom_type == "repeat"
-    
-    def is_noderef(self):
-        return self.atom_type == "noderef"
-    
-    def is_oneof(self):
-        return self.atom_type == "oneof"
-
-class Field:
-    def __init__(self, type: str, name: str):
-        self.type = type
-        self.name = name
-    
-class Token(Atom):
-    def __init__(self, type: TokenType, binds_to: str | None = None):
-        super().__init__("token")
-        self.type = type
-        self.binds_to = binds_to
-
-    def repr(self):
-        return "Token"
-
-noderegistrations = {}
-
-class Node:
-    def __init__(self, name: str, fields: List[Field], expression: List[Atom]):
-        self.name = name
-        self.fields = fields
-        self.expression = expression
-
-        noderegistrations[name] = self
-
-class NodeReference(Atom):
-    def __init__(self, name: str):
-        super().__init__("noderef")
-        self.name = name
-    
-    def get_node(self) -> Node:
-        return noderegistrations[self.name]
-    
-    def repr(self):
-        return "NodeReference"
-
-class AtomList(Atom):
-    # Don't use this by itself
-    def __init__(self, atom_type, atoms: List[Atom]):
-        super().__init__(atom_type)
-        self.atoms = atoms
-
-class Repeat(AtomList):
-    def __init__(self, *atoms: List[Atom]):
-        super().__init__("repeat", atoms)
-    
-    def repr(self):
-        return "OneOf"
-
-class OneOf(AtomList):
-    def __init__(self, *atoms: List[Atom]):
-        super().__init__("oneof", atoms)
-    
-    def repr(self):
-        return "OneOf"
+from grammar_types import *
 
 token_open_curly = TokenType("OPEN_CURLY")
 token_close_curly = TokenType("CLOSE_CURLY")
@@ -92,70 +12,84 @@ token_intlit = TokenType("INTLIT", "int64_t")
 grammar = [
     Node(
         name="json",
-        fields=[],
+        fields=[
+            NodeField(name="subnode")
+        ],
         expression=[
             OneOf(
-                NodeReference("primitive"),
-                NodeReference("container"),
+                NodeReference("primitive", binds_to="subnode"),
+                NodeReference("container", binds_to="subnode"),
             )
         ]
     ),
     Node(
         name="primitive",
-        fields=[],
+        fields=[
+            NodeField(name="subnode")
+        ],
         expression=[
             OneOf(
-                NodeReference("number"),
-                NodeReference("string")
+                NodeReference("number", binds_to="subnode"),
+                NodeReference("string", binds_to="subnode")
             )
         ]
     ),
     Node(
         name="number",
-        fields=[Field(name="value", type="int64_t")],
+        fields=[
+            Int64Field(name="value")
+        ],
         expression=[
             Token(token_intlit, binds_to="value")
         ]
     ),
     Node(
         name="string",
-        fields=[Field(name="value", type="const char*")],
+        fields=[
+            StringField("value")
+        ],
         expression=[
             Token(token_strlit, binds_to="value")
         ]
     ),
     Node(
         name="container",
-        fields=[],
+        fields=[
+            NodeField(name="subnode")
+        ],
         expression=[
             OneOf(
-                NodeReference("object"),
-                NodeReference("array"),
+                NodeReference("object", binds_to="subnode"),
+                NodeReference("array", binds_to="subnode"),
             )
         ]
     ),
     Node(
         name="array",
-        fields=[],
+        fields=[
+            NodeListField("items")
+        ],
         expression=[
             Token(token_open_square),
-            NodeReference("json"),
+            NodeReference("json", binds_to="items"),
             Repeat(
                 Token(token_comma),
-                NodeReference("json"),
+                NodeReference("json", binds_to="items"),
             ),
             Token(token_close_square)
         ]
     ),
     Node(
         name="object",
-        fields=[],
+        fields=[
+            NodeListField("members")
+        ],
         expression=[
             Token(token_open_curly),
-            NodeReference("member"),
+            NodeReference("member", binds_to="members"),
             Repeat(
                 Token(token_comma),
-                NodeReference("member"),
+                NodeReference("member", binds_to="members"),
             ),
             Token(token_close_curly)
         ]
@@ -163,12 +97,13 @@ grammar = [
     Node(
         name="member",
         fields = [
-           Field(name = "key", type = "const char*")
+           StringField("key"),
+           NodeField("value")
         ],
         expression = [
             Token(token_strlit, binds_to="key"),
             Token(token_colon),
-            NodeReference("json")
+            NodeReference("json", binds_to="value")
         ]
     ),
 ]
