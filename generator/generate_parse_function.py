@@ -92,7 +92,7 @@ def generate_parse_function(node: Node):
     for atom in node.expression:
         code += _generate_parse_atom(4, node, atom)
     
-    code += f"    ret_val->{node.name}.children = (node*)children.head;\n"
+    code += f"    ret_val->children = (node*)children.head;\n"
         
     code += "    return ret_val;\n"
     code += "}\n\n"

@@ -6,28 +6,27 @@ from generate_prototypes import generate_prototypes
 def generate_header(template_dir: str):
     enum = "typedef enum {\n"
 
+    for node in grammar:
+        enum += f"    {node_enum_name(node)},\n"
+    
+    enum += "} node_id;\n"
+
     struct = ""
     struct += "typedef struct node {\n"
     struct += "    struct node* next;\n"
+    struct += "    struct node* children; // linked list\n"
     struct += "    node_id id;\n"
     struct += "\n"
     struct += "    union {\n"
 
-
     for node in grammar:
-        enum += f"        {node_enum_name(node)},\n"
+        if len(node.fields) == 0:
+            continue
 
         struct += "        struct {\n"
         for field in node.fields:
             struct += f"            {field.type} {field.name};\n"
-        
-        struct += f"            struct node* children;\n"
         struct += f"        }} {node.name};\n\n"
-
-        
-
-
-    enum += "} node_id;\n"
 
     struct += "    };\n"
     struct += "} node;\n"
