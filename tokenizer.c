@@ -94,6 +94,16 @@ void tokenize(memory_arena* arena, linked_list* output, const char* text) {
                     .argument_handler = NULL,
             },
             {
+                    .id = TOKEN_OPEN_SQUARE,
+                    .pattern = "^\\[",
+                    .argument_handler = NULL,
+            },
+            {
+                    .id = TOKEN_CLOSE_SQUARE,
+                    .pattern = "^\\]",
+                    .argument_handler = NULL,
+            },
+            {
                     .id = TOKEN_COLON,
                     .pattern = "^:",
                     .argument_handler = NULL,

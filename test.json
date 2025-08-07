@@ -1,4 +1,5 @@
 {
    "item": 123,
-   "second item": 2
+   "second item": 2,
+   "array item": [1, 2, 3]
 }

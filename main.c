@@ -27,7 +27,7 @@ int main() {
     linked_list tokens = {0};
     tokenize(&arena, &tokens, buffer);
 
-    node* root = parse_object(&arena, &tokens);
+    node* root = parse_json(&arena, &tokens);
 
     return 0;
 }

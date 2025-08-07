@@ -6,15 +6,16 @@ from generate_prototypes import generate_prototypes
 def generate_header(template_dir: str):
     enum = "typedef enum {\n"
 
-    struct = """typedef struct node {
-        struct node* next;
-        node_id id;
-        
-        union {\n"""
+    struct = ""
+    struct += "typedef struct node {\n"
+    struct += "    struct node* next;\n"
+    struct += "    node_id id;\n"
+    struct += "\n"
+    struct += "    union {\n"
 
 
     for node in grammar:
-        enum += f"    {node_enum_name(node)},\n"
+        enum += f"        {node_enum_name(node)},\n"
 
         struct += "        struct {\n"
         for field in node.fields:

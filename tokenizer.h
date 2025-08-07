@@ -8,10 +8,12 @@ typedef enum {
     TOKEN_NONE,
     TOKEN_OPEN_CURLY,
     TOKEN_CLOSE_CURLY,
+    TOKEN_OPEN_SQUARE,
+    TOKEN_CLOSE_SQUARE,
     TOKEN_COLON,
     TOKEN_COMMA,
     TOKEN_STRLIT,
-    TOKEN_INTLIT
+    TOKEN_INTLIT,
 } token_id;
 
 typedef struct token {

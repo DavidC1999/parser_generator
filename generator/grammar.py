@@ -21,6 +21,9 @@ class Atom:
     
     def is_noderef(self):
         return self.atom_type == "noderef"
+    
+    def is_oneof(self):
+        return self.atom_type == "oneof"
 
 class Field:
     def __init__(self, type: str, name: str):
@@ -32,6 +35,9 @@ class Token(Atom):
         super().__init__("token")
         self.type = type
         self.binds_to = binds_to
+
+    def repr(self):
+        return "Token"
 
 noderegistrations = {}
 
@@ -50,14 +56,34 @@ class NodeReference(Atom):
     
     def get_node(self) -> Node:
         return noderegistrations[self.name]
+    
+    def repr(self):
+        return "NodeReference"
 
-class Repeat(Atom):
-    def __init__(self, *atoms: List[Atom]):
-        super().__init__("repeat")
+class AtomList(Atom):
+    # Don't use this by itself
+    def __init__(self, atom_type, atoms: List[Atom]):
+        super().__init__(atom_type)
         self.atoms = atoms
+
+class Repeat(AtomList):
+    def __init__(self, *atoms: List[Atom]):
+        super().__init__("repeat", atoms)
+    
+    def repr(self):
+        return "OneOf"
+
+class OneOf(AtomList):
+    def __init__(self, *atoms: List[Atom]):
+        super().__init__("oneof", atoms)
+    
+    def repr(self):
+        return "OneOf"
 
 token_open_curly = TokenType("OPEN_CURLY")
 token_close_curly = TokenType("CLOSE_CURLY")
+token_open_square = TokenType("OPEN_SQUARE")
+token_close_square = TokenType("CLOSE_SQUARE")
 token_comma = TokenType("COMMA")
 token_colon = TokenType("COLON")
 token_strlit = TokenType("STRLIT", "const char*")
@@ -65,33 +91,84 @@ token_intlit = TokenType("INTLIT", "int64_t")
 
 grammar = [
     Node(
-        name="object",
-        fields = [],
+        name="json",
+        fields=[],
         expression=[
-           Token(token_open_curly),
-           NodeReference("member"),
-           Repeat(Token(token_comma), NodeReference("member")),
-           Token(token_close_curly),
+            OneOf(
+                NodeReference("primitive"),
+                NodeReference("container"),
+            )
+        ]
+    ),
+    Node(
+        name="primitive",
+        fields=[],
+        expression=[
+            OneOf(
+                NodeReference("number"),
+                NodeReference("string")
+            )
+        ]
+    ),
+    Node(
+        name="number",
+        fields=[Field(name="value", type="int64_t")],
+        expression=[
+            Token(token_intlit, binds_to="value")
+        ]
+    ),
+    Node(
+        name="string",
+        fields=[Field(name="value", type="const char*")],
+        expression=[
+            Token(token_strlit, binds_to="value")
+        ]
+    ),
+    Node(
+        name="container",
+        fields=[],
+        expression=[
+            OneOf(
+                NodeReference("object"),
+                NodeReference("array"),
+            )
+        ]
+    ),
+    Node(
+        name="array",
+        fields=[],
+        expression=[
+            Token(token_open_square),
+            NodeReference("json"),
+            Repeat(
+                Token(token_comma),
+                NodeReference("json"),
+            ),
+            Token(token_close_square)
+        ]
+    ),
+    Node(
+        name="object",
+        fields=[],
+        expression=[
+            Token(token_open_curly),
+            NodeReference("member"),
+            Repeat(
+                Token(token_comma),
+                NodeReference("member"),
+            ),
+            Token(token_close_curly)
         ]
     ),
     Node(
         name="member",
         fields = [
-           Field(name = "name", type = "const char*")
+           Field(name = "key", type = "const char*")
         ],
         expression = [
-            Token(token_strlit, binds_to="name"),
+            Token(token_strlit, binds_to="key"),
             Token(token_colon),
-            NodeReference("number")
+            NodeReference("json")
         ]
     ),
-    Node(
-        name = "number",
-        fields = [
-            Field(name = "value", type = "int64_t")
-        ],
-        expression = [
-            Token(token_intlit, binds_to="value")
-        ]
-    )
 ]

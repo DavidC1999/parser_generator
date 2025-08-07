@@ -3,3 +3,4 @@ cmake-build-debug
 parser.c
 parser.h
 __pycache__
+.vscode
