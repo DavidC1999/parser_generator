@@ -15,7 +15,7 @@ typedef struct {
 } linked_list;
 
 // Useful for defining linked lists which are easily inspectible with your debugger.
-// "type" MUST be type-compatible with list_item.   
+// "type" MUST be type-compatible with list_item.
 #define LINKED_LIST_T(type) \
     struct {                \
         type* head;         \

@@ -40,7 +40,7 @@ def _generate_parse_atom(indent_num:int, node: Node, atom: Atom):
         code += f"{indent}consume_token(tokens);\n"
     elif atom.is_noderef():
         referenced_node = atom.get_node()
-        code += f"{indent}linked_list_append((linked_list*)&ret_val->children, (list_item*)parse_{referenced_node.name}(arena, tokens));\n"
+        code += f"{indent}linked_list_append((linked_list*)&ret_val->subnodes, (list_item*)parse_{referenced_node.name}(arena, tokens));\n"
     elif atom.is_repeat():
         if not atom.atoms[0].is_token():
             raise "First atom of repeat atom must be a token (for now)"
@@ -70,7 +70,7 @@ def _generate_parse_atom(indent_num:int, node: Node, atom: Atom):
 
                 code += f"{indent}    case {enum_name}:\n"
 
-            code += f"{indent}        linked_list_append((linked_list*)&ret_val->children, (list_item*)parse_{referenced_node.name}(arena, tokens));\n"
+            code += f"{indent}        linked_list_append((linked_list*)&ret_val->subnodes, (list_item*)parse_{referenced_node.name}(arena, tokens));\n"
             code += f"{indent}        break;\n"
         
         code += f"{indent}    default:\n"
@@ -86,7 +86,7 @@ def generate_parse_function(node: Node):
     code =  f"node* parse_{node.name}(memory_arena* arena, linked_list* tokens) {{\n"
     code +=  "    node* ret_val = arena_alloc(arena, sizeof(node));\n"
     code += f"    ret_val->id = {node_enum_name(node)};\n"
-    code += f"    linked_list_clear((linked_list*)&ret_val->children);\n"
+    code += f"    linked_list_clear((linked_list*)&ret_val->subnodes);\n"
 
     for atom in node.expression:
         code += _generate_parse_atom(4, node, atom)

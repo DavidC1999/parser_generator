@@ -14,7 +14,7 @@ def generate_header(template_dir: str):
     struct = ""
     struct += "typedef struct node {\n"
     struct += "    struct node* next;\n"
-    struct += "    LINKED_LIST_T(struct node) children;\n"
+    struct += "    LINKED_LIST_T(struct node) subnodes;\n"
     struct += "    node_id id;\n"
     struct += "\n"
     struct += "    union {\n"
