@@ -21,14 +21,40 @@ class NodeName:
     member = "member"
 
 token_types = [
-    TokenType(TokenName.open_curly),
-    TokenType(TokenName.close_curly),
-    TokenType(TokenName.open_square),
-    TokenType(TokenName.close_square),
-    TokenType(TokenName.comma),
-    TokenType(TokenName.colon),
-    TokenType(TokenName.strlit, "const char*"),
-    TokenType(TokenName.intlit, "int64_t"),
+    TokenType(
+        name=TokenName.open_curly,
+        expression=[]
+    ),
+    TokenType(
+        name=TokenName.close_curly,
+        expression=[]
+    ),
+    TokenType(
+        name=TokenName.open_square,
+        expression=[]
+    ),
+    TokenType(
+        name=TokenName.close_square,
+        expression=[]
+    ),
+    TokenType(
+        name=TokenName.comma,
+        expression=[]
+    ),
+    TokenType(
+        name=TokenName.colon,
+        expression=[]
+    ),
+    TokenType(
+        name=TokenName.strlit,
+        expression=[],
+        value_type="const char*"
+    ),
+    TokenType(
+        name=TokenName.intlit,
+        expression=[],
+        value_type="int64_t"
+    ),
 ]
 
 grammar = [
@@ -39,9 +65,9 @@ grammar = [
         ],
         expression=[
             OneOf(
-                Node(NodeName.primitive, binds_to="subnode"),
-                Node(NodeName.container, binds_to="subnode"),
-            )
+                Node(NodeName.primitive),
+                Node(NodeName.container),
+            ).bind_to("subnode")
         ]
     ),
     NodeType(
@@ -51,9 +77,9 @@ grammar = [
         ],
         expression=[
             OneOf(
-                Node(NodeName.number, binds_to="subnode"),
-                Node(NodeName.string, binds_to="subnode")
-            )
+                Node(NodeName.number),
+                Node(NodeName.string)
+            ).bind_to("subnode")
         ]
     ),
     NodeType(
@@ -62,7 +88,7 @@ grammar = [
             Int64Field(name="value")
         ],
         expression=[
-            Token(TokenName.intlit, binds_to="value")
+            Token(TokenName.intlit).bind_to("value")
         ]
     ),
     NodeType(
@@ -71,7 +97,7 @@ grammar = [
             StringField("value")
         ],
         expression=[
-            Token(TokenName.strlit, binds_to="value")
+            Token(TokenName.strlit).bind_to("value")
         ]
     ),
     NodeType(
@@ -81,9 +107,9 @@ grammar = [
         ],
         expression=[
             OneOf(
-                Node(NodeName.object, binds_to="subnode"),
-                Node(NodeName.array, binds_to="subnode"),
-            )
+                Node(NodeName.object),
+                Node(NodeName.array),
+            ).bind_to("subnode")
         ]
     ),
     NodeType(
@@ -93,10 +119,10 @@ grammar = [
         ],
         expression=[
             Token(TokenName.open_square),
-            Node(NodeName.json, binds_to="items"),
+            Node(NodeName.json).bind_to("items"),
             Repeat(
                 Token(TokenName.comma),
-                Node(NodeName.json, binds_to="items"),
+                Node(NodeName.json).bind_to("items"),
             ),
             Token(TokenName.close_square)
         ]
@@ -108,10 +134,10 @@ grammar = [
         ],
         expression=[
             Token(TokenName.open_curly),
-            Node(NodeName.member, binds_to="members"),
+            Node(NodeName.member).bind_to("members"),
             Repeat(
                 Token(TokenName.comma),
-                Node(NodeName.member, binds_to="members"),
+                Node(NodeName.member).bind_to("members"),
             ),
             Token(TokenName.close_curly)
         ]
@@ -123,9 +149,9 @@ grammar = [
            NodeField("value")
         ],
         expression = [
-            Token(TokenName.strlit, binds_to="key"),
+            Token(TokenName.strlit).bind_to("key"),
             Token(TokenName.colon),
-            Node(NodeName.json, binds_to="value")
+            Node(NodeName.json).bind_to("value")
         ]
     ),
 ]

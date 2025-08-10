@@ -3,6 +3,14 @@ from typing import List
 class Atom:
     def __init__(self, atom_type):
         self.atom_type = atom_type
+        self.binds_to = None
+    
+    def bind_to(self, target_name):
+        self.binds_to = target_name
+        return self
+
+    def get_bound_to(self):
+        return self.binds_to
     
     def is_token(self):
         return self.atom_type == "token"
@@ -16,6 +24,62 @@ class Atom:
     def is_oneof(self):
         return self.atom_type == "oneof"
 
+class AtomList(Atom):
+    # Don't use this by itself
+    def __init__(self, atom_type, atoms: List[Atom]):
+        super().__init__(atom_type)
+        self.atoms = atoms
+    
+    def bind_to(self, target_name):
+        super().bind_to(target_name)
+        for atom in self.atoms:
+            atom.bind_to(target_name)
+        return self
+
+class Repeat(AtomList):
+    def __init__(self, *atoms: List[Atom]):
+        super().__init__("repeat", atoms)
+    
+    def repr(self):
+        return "OneOf"
+
+class OneOf(AtomList):
+    def __init__(self, *atoms: List[Atom]):
+        super().__init__("oneof", atoms)
+
+    
+    def repr(self):
+        return "OneOf"
+
+# TOKENS:
+tokenregistrations = {}
+
+def ensure_char(*char_list: List[str]):
+    for char in char_list:
+        if char is None or len(char) != 1:
+                raise f"Invalid character: {char}"
+
+class TokenType:
+    def __init__(self, name: str, expression: List[Atom], value_type: str | None = None):
+        self.name = name
+        self.expression = expression
+        self.value_type = value_type
+
+        tokenregistrations[name] = self
+    
+class Character(Atom):
+    def __init__(self, character: str):
+        ensure_char(character)
+        super().__init__("character")
+        self.character = character
+
+class CharacterRange(Atom):
+    def __init__(self, from_char: str, to_char: str):
+        ensure_char(from_char, to_char)
+        self.from_char = from_char
+        self.to_char = to_char
+
+# NODES:
 class Field:
     def __init__(self, type: str, name: str):
         self.type = type
@@ -51,27 +115,6 @@ class NodeListField(Field):
     def __init__(self, name: str):
         super().__init__("LINKED_LIST_T(struct node)", name)
 
-tokenregistrations = {}
-
-class TokenType:
-    def __init__(self, name: str, value_type: str | None = None):
-        self.name = name
-        self.value_type = value_type
-
-        tokenregistrations[name] = self
-
-class Token(Atom):
-    def __init__(self, name: str, binds_to: str | None = None):
-        super().__init__("token")
-        self.name = name
-        self.binds_to = binds_to
-
-    def get_token_type(self):
-        return tokenregistrations[self.name]
-
-    def repr(self):
-        return "Token"
-
 noderegistrations = {}
 
 class NodeType:
@@ -83,33 +126,23 @@ class NodeType:
         noderegistrations[name] = self
 
 class Node(Atom):
-    def __init__(self, name: str, binds_to: str | None = None):
+    def __init__(self, name: str):
         super().__init__("noderef")
         self.name = name
-        self.binds_to = binds_to
     
     def get_node_type(self) -> NodeType:
         return noderegistrations[self.name]
     
     def repr(self):
         return "NodeReference"
-
-class AtomList(Atom):
-    # Don't use this by itself
-    def __init__(self, atom_type, atoms: List[Atom]):
-        super().__init__(atom_type)
-        self.atoms = atoms
-
-class Repeat(AtomList):
-    def __init__(self, *atoms: List[Atom]):
-        super().__init__("repeat", atoms)
     
-    def repr(self):
-        return "OneOf"
+class Token(Atom):
+    def __init__(self, name: str):
+        super().__init__("token")
+        self.name = name
 
-class OneOf(AtomList):
-    def __init__(self, *atoms: List[Atom]):
-        super().__init__("oneof", atoms)
-    
+    def get_token_type(self):
+        return tokenregistrations[self.name]
+
     def repr(self):
-        return "OneOf"
+        return "Token"

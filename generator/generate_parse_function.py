@@ -31,8 +31,8 @@ def _generate_parse_atom(indent_num:int, node: NodeType, atom: Atom):
     if atom.is_token():
         token: Token = atom
         code += f"{indent}expect_token(tokens, {token_enum_name(token)});\n"
-        if token.binds_to != None:
-            field = next(f for f in node.fields if f.name == token.binds_to)
+        if token.get_bound_to() != None:
+            field = next(f for f in node.fields if f.name == token.get_bound_to())
             if (field.type.endswith("*")): # is pointer
                 code += f"{indent}ret_val->{node.name}.{field.name} = ({field.type})current_token(tokens)->arg;\n"
             else:
@@ -41,10 +41,10 @@ def _generate_parse_atom(indent_num:int, node: NodeType, atom: Atom):
     elif atom.is_noderef():
         node_reference: Node = atom
         referenced_node = atom.get_node_type()
-        if node_reference.binds_to is None:
+        if node_reference.get_bound_to() is None:
             code += f"{indent}parse_{referenced_node.name}(arena, tokens);\n"
         else:
-            field = next((f for f in node.fields if f.name == node_reference.binds_to), None)
+            field = next((f for f in node.fields if f.name == node_reference.get_bound_to()), None)
             parse_node_call = f"parse_{referenced_node.name}(arena, tokens)"
 
             if field is None:
