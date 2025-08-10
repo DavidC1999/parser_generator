@@ -6,8 +6,8 @@ def _get_possible_tokens(atom: Atom) -> List[Token]:
         return [atom]
     
     if atom.is_noderef():
-        as_node_ref: NodeReference = atom
-        as_node: Node = as_node_ref.get_node()
+        as_node_ref: Node = atom
+        as_node: NodeType = as_node_ref.get_node_type()
         if len(as_node.expression) == 0: return[]
         return _get_possible_tokens(as_node.expression[0])
     
@@ -25,7 +25,7 @@ def _get_possible_tokens(atom: Atom) -> List[Token]:
 
         
 
-def _generate_parse_atom(indent_num:int, node: Node, atom: Atom):
+def _generate_parse_atom(indent_num:int, node: NodeType, atom: Atom):
     code = ""
     indent = " " * indent_num
     if atom.is_token():
@@ -39,8 +39,8 @@ def _generate_parse_atom(indent_num:int, node: Node, atom: Atom):
                 code += f"{indent}ret_val->{node.name}.{field.name} = *({field.type}*)current_token(tokens)->arg;\n"
         code += f"{indent}consume_token(tokens);\n"
     elif atom.is_noderef():
-        node_reference: NodeReference = atom
-        referenced_node = atom.get_node()
+        node_reference: Node = atom
+        referenced_node = atom.get_node_type()
         if node_reference.binds_to is None:
             code += f"{indent}parse_{referenced_node.name}(arena, tokens);\n"
         else:
@@ -73,7 +73,7 @@ def _generate_parse_atom(indent_num:int, node: Node, atom: Atom):
             if not option.is_noderef():
                 raise "OneOf must only contain nodereferences"
             
-            referenced_node: Node = oneof.atoms[idx]
+            referenced_node: NodeType = oneof.atoms[idx]
 
             tokens = _get_possible_tokens(option)
             for token in tokens:
@@ -96,7 +96,7 @@ def _generate_parse_atom(indent_num:int, node: Node, atom: Atom):
     return code
 
 
-def generate_parse_function(node: Node):
+def generate_parse_function(node: NodeType):
     code = ""
 
     code =  f"node* parse_{node.name}(memory_arena* arena, linked_list* tokens) {{\n"

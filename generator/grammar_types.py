@@ -1,10 +1,5 @@
 from typing import List
 
-class TokenType:
-    def __init__(self, name: str, value_type: str | None = None):
-        self.name = name
-        self.value_type = value_type
-
 class Atom:
     def __init__(self, atom_type):
         self.atom_type = atom_type
@@ -56,18 +51,30 @@ class NodeListField(Field):
     def __init__(self, name: str):
         super().__init__("LINKED_LIST_T(struct node)", name)
 
+tokenregistrations = {}
+
+class TokenType:
+    def __init__(self, name: str, value_type: str | None = None):
+        self.name = name
+        self.value_type = value_type
+
+        tokenregistrations[name] = self
+
 class Token(Atom):
-    def __init__(self, type: TokenType, binds_to: str | None = None):
+    def __init__(self, name: str, binds_to: str | None = None):
         super().__init__("token")
-        self.type = type
+        self.name = name
         self.binds_to = binds_to
+
+    def get_token_type(self):
+        return tokenregistrations[self.name]
 
     def repr(self):
         return "Token"
 
 noderegistrations = {}
 
-class Node:
+class NodeType:
     def __init__(self, name: str, fields: List[Field], expression: List[Atom]):
         self.name = name
         self.fields = fields
@@ -75,13 +82,13 @@ class Node:
 
         noderegistrations[name] = self
 
-class NodeReference(Atom):
+class Node(Atom):
     def __init__(self, name: str, binds_to: str | None = None):
         super().__init__("noderef")
         self.name = name
         self.binds_to = binds_to
     
-    def get_node(self) -> Node:
+    def get_node_type(self) -> NodeType:
         return noderegistrations[self.name]
     
     def repr(self):
