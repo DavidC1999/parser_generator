@@ -62,50 +62,38 @@ void tokenize(memory_arena* arena, linked_list* output, const char* text) {
             new_token = arena_alloc(arena, sizeof(token));
             new_token->id = TOKEN_OPEN_CURLY;
             new_token->line = line;
-            const char* start = iterator;
             iterator += 1;
-            const char* end = iterator;
         } else if (strncmp(iterator, "}", 1) == 0) {
             new_token = arena_alloc(arena, sizeof(token));
             new_token->id = TOKEN_CLOSE_CURLY;
             new_token->line = line;
-            const char* start = iterator;
             iterator += 1;
-            const char* end = iterator;
         } else if (strncmp(iterator, "[", 1) == 0) {
             new_token = arena_alloc(arena, sizeof(token));
             new_token->id = TOKEN_OPEN_SQUARE;
             new_token->line = line;
-            const char* start = iterator;
             iterator += 1;
-            const char* end = iterator;
         } else if (strncmp(iterator, "]", 1) == 0) {
             new_token = arena_alloc(arena, sizeof(token));
             new_token->id = TOKEN_CLOSE_SQUARE;
             new_token->line = line;
-            const char* start = iterator;
             iterator += 1;
-            const char* end = iterator;
         } else if (strncmp(iterator, ",", 1) == 0) {
             new_token = arena_alloc(arena, sizeof(token));
             new_token->id = TOKEN_COMMA;
             new_token->line = line;
-            const char* start = iterator;
             iterator += 1;
-            const char* end = iterator;
         } else if (strncmp(iterator, ":", 1) == 0) {
             new_token = arena_alloc(arena, sizeof(token));
             new_token->id = TOKEN_COLON;
             new_token->line = line;
-            const char* start = iterator;
             iterator += 1;
-            const char* end = iterator;
         } else if (strncmp(iterator, "\"", 1) == 0) {
             new_token = arena_alloc(arena, sizeof(token));
             new_token->id = TOKEN_STRLIT;
             new_token->line = line;
-            const char* start = iterator;
             iterator += 1;
+            const char* start = iterator;
             bool loop = true;
             while(loop) {
                 if (is_character_range(*iterator, 'a', 'z') || is_character_range(*iterator, 'A', 'Z') || is_character_range(*iterator, '0', '9') || strncmp(iterator, "\\\"", 2) == 0 || is_character_set(*iterator, "!@#$%^&*()`~/*-\\ ")) {
@@ -124,11 +112,11 @@ void tokenize(memory_arena* arena, linked_list* output, const char* text) {
                 }
                 loop = false;
             }
+            const char* end = iterator;
             if(!(strncmp(iterator, "\"", 1) == 0)) {;
                 panic(line, "Unexpected character");
             }
             iterator += 1;
-            const char* end = iterator;
             new_token->strlit_value = convert_to_string(line, arena, start, end);
         } else if (is_character_range(*iterator, '0', '9')) {
             new_token = arena_alloc(arena, sizeof(token));

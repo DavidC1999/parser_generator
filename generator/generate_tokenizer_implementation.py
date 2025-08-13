@@ -48,6 +48,10 @@ def generate_condition(atom: Atom) -> str:
 def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False) -> str:
     indent = " " * indent_num
     code = ""
+
+    if atom.is_token_field_value():
+        code += f"{indent}const char* start = iterator;\n"
+
     if atom.is_string():
         string: String = atom
         _, length = escape_c_string(string.value)
@@ -96,6 +100,10 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
         code += "\n"
     else:
         raise f"Unsupported in tokenizer: {atom.atom_type}"
+    
+    if atom.is_token_field_value():
+        code += f"{indent}const char* end = iterator;\n"
+
     return code
 
 def generate_interpret_field(token_type: TokenType):
@@ -113,12 +121,10 @@ def generate_token_type_handling(token_type: TokenType):
     code += f"            new_token = arena_alloc(arena, sizeof(token));\n"
     code += f"            new_token->id = {token_enum_name(token_type)};\n"
     code += f"            new_token->line = line;\n"
-    code += f"            const char* start = iterator;\n"
     skip_check = True
     for atom in token_type.expression:
         code += generate_atom_handling(12, atom, skip_check)
         skip_check = False
-    code += f"            const char* end = iterator;\n"
 
     if token_type.field is not None:
         code += f"            new_token->{token_field_name(token_type)} = {generate_interpret_field(token_type)};\n"

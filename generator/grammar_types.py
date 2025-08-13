@@ -4,6 +4,7 @@ class Atom:
     def __init__(self, atom_type):
         self.atom_type = atom_type
         self.binds_to = None
+        self.token_field_value = False
     
     def bind_to(self, target_name):
         self.binds_to = target_name
@@ -11,6 +12,13 @@ class Atom:
 
     def get_bound_to(self):
         return self.binds_to
+    
+    def set_token_field_value(self):
+        self.token_field_value = True
+        return self
+    
+    def is_token_field_value(self):
+        return self.token_field_value
     
     def is_token(self):
         return self.atom_type == "token"

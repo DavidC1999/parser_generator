@@ -62,7 +62,7 @@ token_types = [
                     String("\\\""),
                     CharacterSet("!@#$%^&*()`~/*-\\ "),
                 )
-            ).bind_to("value"),
+            ).set_token_field_value(),
             String("\"")
         ],
         field=StringField("value")
@@ -72,7 +72,7 @@ token_types = [
         expression=[
             Repeat(
                 CharacterRange("0", "9")
-            ).bind_to("value")
+            ).set_token_field_value()
         ],
         field=Int64Field("value")
     ),
