@@ -10,12 +10,7 @@
 
 [enum]
 
-typedef struct token {
-    token_id id;
-    size_t value_size;
-    const char* value;
-    uint32_t line;
-} token;
+[struct]
 
 void tokenize(memory_arena* arena, linked_list* output, const char* text);
 

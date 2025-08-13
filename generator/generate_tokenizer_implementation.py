@@ -10,11 +10,11 @@ def escape_c_string(text: str) -> tuple[str, int]:
         elif c == "\"":
             output += "\\\""
         elif c == "\n":
-            output += "\\\n"
+            output += "\\n"
         elif c == "\r":
-            output += "\\\r"
+            output += "\\r"
         elif c == "\t":
-            output += "\\\t"
+            output += "\\t"
         else:
             output += c
         length += 1
@@ -53,13 +53,13 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
         _, length = escape_c_string(string.value)
         if not skip_check:
             code += f"{indent}if(!({generate_condition(atom)})) {{;\n"
-            code += f"{indent}    panic(\"Unexpected character\");\n"
+            code += f"{indent}    panic(line, \"Unexpected character\");\n"
             code += f"{indent}}}\n"
         code += f"{indent}iterator += {length};\n"
     elif atom.is_character_range() or atom.is_character_set():
         if not skip_check:
             code += f"{indent}if(!({generate_condition(atom)})) {{;\n"
-            code += f"{indent}    panic(\"Unexpected character\");\n"
+            code += f"{indent}    panic(line, \"Unexpected character\");\n"
             code += f"{indent}}}\n"
         code += f"{indent}iterator += 1;\n"
     elif atom.is_repeat():
@@ -90,13 +90,23 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
   
         if not skip_check:
             code += f" else {{\n"
-            code += f"{indent}    panic(\"Unexpected character\");\n"
+            code += f"{indent}    panic(line, \"Unexpected character\");\n"
             code += f"{indent}}}"
         
         code += "\n"
     else:
         raise f"Unsupported in tokenizer: {atom.atom_type}"
     return code
+
+def generate_interpret_field(token_type: TokenType):
+    field: Field = token_type.field
+    if field.is_string():
+        return "convert_to_string(line, arena, start, end)"
+    if field.is_integer():
+        return f"({field.type})convert_to_int(line, arena, start, end)"
+    
+    raise "Unable to interpret token field data"
+
 
 def generate_token_type_handling(token_type: TokenType):
     code = ""
@@ -109,7 +119,9 @@ def generate_token_type_handling(token_type: TokenType):
         code += generate_atom_handling(12, atom, skip_check)
         skip_check = False
     code += f"            const char* end = iterator;\n"
-    code += f"            new_token->value = create_null_terminated_string(arena, start, end);\n"
+
+    if token_type.field is not None:
+        code += f"            new_token->{token_field_name(token_type)} = {generate_interpret_field(token_type)};\n"
 
     return code
 

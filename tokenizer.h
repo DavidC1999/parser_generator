@@ -21,11 +21,15 @@ typedef enum token_id {
 
 
 typedef struct token {
+    struct token* next;
     token_id id;
-    size_t value_size;
-    const char* value;
     uint32_t line;
+    union {
+        const char* strlit_value;
+        int64_t intlit_value;
+    };
 } token;
+
 
 void tokenize(memory_arena* arena, linked_list* output, const char* text);
 

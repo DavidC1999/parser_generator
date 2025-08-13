@@ -72,11 +72,11 @@ class TokenType:
     def __init__(self, name: str, expression: List[Atom], **kwargs):
         self.name = name
         self.expression = expression
-        self.value_type = None
+        self.field = None
         self.ignored = False
 
-        if "value_type" in kwargs:
-            self.value_type = kwargs["value_type"] # string
+        if "field" in kwargs:
+            self.field = kwargs["field"] # string
         
         if "ignored" in kwargs:
             self.ignored = kwargs["ignored"] # bool
@@ -108,6 +108,12 @@ class Field:
     
     def is_primitive(self):
         return self.type in ["int64_t"]
+    
+    def is_integer(self):
+        return self.type in ["int64_t"]
+    
+    def is_string(self):
+        return self.type == "const char*"
     
     def is_pointer(self):
         return self.type.endswith("*")

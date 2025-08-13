@@ -1,14 +1,14 @@
 from grammar_types import *
 
 class TokenName:
-    open_curly = "OPEN_CURLY"
-    close_curly = "CLOSE_CURLY"
-    open_square = "OPEN_SQUARE"
-    close_square = "CLOSE_SQUARE"
-    comma = "COMMA"
-    colon = "COLON"
-    strlit = "STRLIT"
-    intlit = "INTLIT"
+    open_curly = "open_curly"
+    close_curly = "close_curly"
+    open_square = "open_square"
+    close_square = "close_square"
+    comma = "comma"
+    colon = "colon"
+    strlit = "strlit"
+    intlit = "intlit"
 
 class NodeName:
     json = "json"
@@ -23,7 +23,7 @@ class NodeName:
 token_types = [
     TokenType(
         name=None,
-        expression=[CharacterSet(" \\n\\t")],
+        expression=[CharacterSet(" \n\t")],
         ignored=True
     ),
     TokenType(
@@ -60,21 +60,21 @@ token_types = [
                     CharacterRange("A", "Z"),
                     CharacterRange("0", "9"),
                     String("\\\""),
-                    CharacterSet("!@#$%^&*()`~/*-\\"),
+                    CharacterSet("!@#$%^&*()`~/*-\\ "),
                 )
-            ),
+            ).bind_to("value"),
             String("\"")
         ],
-        value_type="const char*"
+        field=StringField("value")
     ),
     TokenType(
         name=TokenName.intlit,
         expression=[
             Repeat(
                 CharacterRange("0", "9")
-            )
+            ).bind_to("value")
         ],
-        value_type="int64_t"
+        field=Int64Field("value")
     ),
 ]
 
