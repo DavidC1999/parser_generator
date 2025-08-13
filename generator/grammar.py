@@ -62,19 +62,19 @@ token_types = [
                     String("\\\""),
                     CharacterSet("!@#$%^&*()`~/*-\\ "),
                 )
-            ).set_token_field_value(),
+            ).bind_to_field(),
             String("\"")
         ],
-        field=StringField("value")
+        field=StringField()
     ),
     TokenType(
         name=TokenName.intlit,
         expression=[
             Repeat(
                 CharacterRange("0", "9")
-            ).set_token_field_value()
+            ).bind_to_field()
         ],
-        field=Int64Field("value")
+        field=Int64Field()
     ),
 ]
 

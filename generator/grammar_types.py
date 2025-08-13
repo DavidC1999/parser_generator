@@ -4,7 +4,7 @@ class Atom:
     def __init__(self, atom_type):
         self.atom_type = atom_type
         self.binds_to = None
-        self.token_field_value = False
+        self.bound_to_field = False
     
     def bind_to(self, target_name):
         self.binds_to = target_name
@@ -13,12 +13,12 @@ class Atom:
     def get_bound_to(self):
         return self.binds_to
     
-    def set_token_field_value(self):
-        self.token_field_value = True
+    def bind_to_field(self):
+        self.bound_to_field = True
         return self
     
-    def is_token_field_value(self):
-        return self.token_field_value
+    def is_bound_to_field(self):
+        return self.bound_to_field
     
     def is_token(self):
         return self.atom_type == "token"
@@ -135,11 +135,11 @@ class Field:
 
 
 class Int64Field(Field):
-    def __init__(self, name: str):
+    def __init__(self, name: str = None):
         super().__init__("int64_t", name)
 
 class StringField(Field):
-    def __init__(self, name: str):
+    def __init__(self, name: str = None):
         super().__init__("const char*", name)
 
 class NodeField(Field):

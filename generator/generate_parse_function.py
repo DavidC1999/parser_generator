@@ -101,6 +101,10 @@ def generate_parse_function(node: NodeType):
     code += f"    ret_val->id = {node_enum_name(node)};\n"
 
     for field in node.fields:
+        if field.name is None:
+            raise "Fields in nodes must have a name"
+
+    for field in node.fields:
         if field.is_node_list():
             code += f"    linked_list_clear((linked_list*)&ret_val->{node.name}.{field.name});\n"
 

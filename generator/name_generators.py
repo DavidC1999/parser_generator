@@ -11,4 +11,4 @@ def token_field_name(token: Token | TokenType):
         token = token.get_token_type()
     
     token_type: TokenType = token
-    return f"{token_type.name}_{token_type.field.name}"
+    return f"{token_type.name}_value"

@@ -49,7 +49,7 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
     indent = " " * indent_num
     code = ""
 
-    if atom.is_token_field_value():
+    if atom.is_bound_to_field():
         code += f"{indent}const char* start = iterator;\n"
 
     if atom.is_string():
@@ -101,7 +101,7 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
     else:
         raise f"Unsupported in tokenizer: {atom.atom_type}"
     
-    if atom.is_token_field_value():
+    if atom.is_bound_to_field():
         code += f"{indent}const char* end = iterator;\n"
 
     return code
@@ -127,6 +127,8 @@ def generate_token_type_handling(token_type: TokenType):
         skip_check = False
 
     if token_type.field is not None:
+        if token_type.field.name is not None:
+            raise "Token fields must not have a name"
         code += f"            new_token->{token_field_name(token_type)} = {generate_interpret_field(token_type)};\n"
 
     return code
