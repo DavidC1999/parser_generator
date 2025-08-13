@@ -1,9 +1,9 @@
 from typing import List
 from grammar import *
 from name_generators import *
-from generate_prototypes import generate_prototypes
+from generate_parser_prototypes import generate_prototypes
 
-def generate_header(template_dir: str):
+def generate_parser_header(template_dir: str):
     enum = "typedef enum {\n"
 
     for node in grammar:
@@ -30,7 +30,7 @@ def generate_header(template_dir: str):
     struct += "    };\n"
     struct += "} node;\n"
 
-    with open(f"{template_dir}/template.h", "r") as f:
+    with open(f"{template_dir}/parsetemplate.h", "r") as f:
         template_h = f.read()
 
     template_h = template_h.replace("[enum]", enum)

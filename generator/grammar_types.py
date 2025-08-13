@@ -23,6 +23,15 @@ class Atom:
     
     def is_oneof(self):
         return self.atom_type == "oneof"
+    
+    def is_string(self):
+        return self.atom_type == "string"
+    
+    def is_character_set(self):
+        return self.atom_type == "character_set"
+    
+    def is_character_range(self):
+        return self.atom_type == "character_range"
 
 class AtomList(Atom):
     # Don't use this by itself
@@ -60,22 +69,34 @@ def ensure_char(*char_list: List[str]):
                 raise f"Invalid character: {char}"
 
 class TokenType:
-    def __init__(self, name: str, expression: List[Atom], value_type: str | None = None):
+    def __init__(self, name: str, expression: List[Atom], **kwargs):
         self.name = name
         self.expression = expression
-        self.value_type = value_type
+        self.value_type = None
+        self.ignored = False
+
+        if "value_type" in kwargs:
+            self.value_type = kwargs["value_type"] # string
+        
+        if "ignored" in kwargs:
+            self.ignored = kwargs["ignored"] # bool
 
         tokenregistrations[name] = self
     
-class Character(Atom):
-    def __init__(self, character: str):
-        ensure_char(character)
-        super().__init__("character")
-        self.character = character
+class String(Atom):
+    def __init__(self, value: str):
+        super().__init__("string")
+        self.value = value
+
+class CharacterSet(Atom):
+    def __init__(self, set: str):
+        super().__init__("character_set")
+        self.set = set
 
 class CharacterRange(Atom):
     def __init__(self, from_char: str, to_char: str):
         ensure_char(from_char, to_char)
+        super().__init__("character_range")
         self.from_char = from_char
         self.to_char = to_char
 

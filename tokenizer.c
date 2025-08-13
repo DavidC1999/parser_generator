@@ -1,194 +1,145 @@
-//
-// Created by david on 8/2/25.
-//
-
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
+// THIS CODE HAS BEEN GENERATED. DO NOT MODIFY BY HAND.
 
 #include "tokenizer.h"
-#include "memory_arena.h"
-#include "linked_list.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <pcre.h>
+static const char* create_null_terminated_string(memory_arena* arena, const char* start, const char* end) {
+    size_t size = end - start + 1;
+    char* new_string = arena_alloc(arena, size);
+    memcpy(new_string, start, size);
+    new_string[size - 1] = '\0';
 
-#define ARRAY_LEN(arr) (sizeof(arr)/sizeof(arr[0]))
-
-typedef struct {
-    memory_arena* arena;
-    linked_list* token_list;
-    int32_t line;
-} tokenizer;
-
-static void new_token(tokenizer* me, token_id id, void* arg) {
-    token* item = arena_alloc(me->arena, sizeof(token));
-    item->id = id;
-    item->arg = arg;
-    item->next = NULL;
-    item->line = me->line;
-    linked_list_append(me->token_list, (list_item*)item);
+    return new_string;
 }
 
-static bool is_digit(char c) {
-    return c >= '0' && c <= '9';
+static bool is_character_range(char c, char from, char to) {
+    return c >= from && c <= to;
 }
 
-static bool is_skip(char c) {
-    return c == ' ' ||
-           c == '\t' ||
-           c == '\n' ||
-           c == '\r';
+static bool is_character_set(char c, const char* set) {
+    size_t len = strlen(set);
+    for (size_t i = 0; i < len; i++) {
+        if (c == set[i]) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
-void* arg_as_str(memory_arena* arena, size_t length, const char* text) {
-    char* output = arena_alloc(arena, length + 1);
-    memcpy(output, text, length);
-    output[length] = '\0';
-    return output;
-}
-
-void* arg_as_int(memory_arena* arena, size_t length, const char* text) {
-    int64_t* number = arena_alloc(arena, sizeof(int64_t));
-    char* end_ptr;
-    *number = strtol(text, &end_ptr, 10);
-    assert(end_ptr == text + length);
-
-    return number;
-}
-
-typedef struct {
-    char* pattern;
-    pcre* compiled_pattern;
-    token_id id;
-
-    void* (* argument_handler)(memory_arena*, size_t, const char*);
-} token_matcher;
-
-void panic(tokenizer* me, const char* message) {
-    printf("error on line %d: %s", me->line, message);
+static void panic(const char* text) {
+    printf("Tokenizer error: %s\n", text);
     exit(1);
 }
 
 void tokenize(memory_arena* arena, linked_list* output, const char* text) {
-    const char* current = text;
-
-    tokenizer me = {
-            .arena = arena,
-            .token_list = output,
-            .line = 1,
-    };
-
-    token_matcher token_matchers[] = {
-            {
-                    .id = TOKEN_NONE,
-                    .pattern = "^[ \\n\\r\\t]+",
-            },
-            {
-                    .id = TOKEN_OPEN_CURLY,
-                    .pattern = "^{",
-                    .argument_handler = NULL,
-            },
-            {
-                    .id = TOKEN_CLOSE_CURLY,
-                    .pattern = "^}",
-                    .argument_handler = NULL,
-            },
-            {
-                    .id = TOKEN_OPEN_SQUARE,
-                    .pattern = "^\\[",
-                    .argument_handler = NULL,
-            },
-            {
-                    .id = TOKEN_CLOSE_SQUARE,
-                    .pattern = "^\\]",
-                    .argument_handler = NULL,
-            },
-            {
-                    .id = TOKEN_COLON,
-                    .pattern = "^:",
-                    .argument_handler = NULL,
-            },
-            {
-                    .id = TOKEN_COMMA,
-                    .pattern = "^,",
-                    .argument_handler = NULL,
-            },
-            {
-                    .id = TOKEN_STRLIT,
-                    .pattern = "^\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"",
-                    .argument_handler = arg_as_str,
-            },
-            {
-                    .id = TOKEN_INTLIT,
-                    .pattern = "^([0-9]+)",
-                    .argument_handler = arg_as_int,
-            }
-    };
-
-    for (int32_t i = 0; i < ARRAY_LEN(token_matchers); i++) {
-        const char* error;
-        int error_offset;
-        token_matchers[i].compiled_pattern = pcre_compile(
-                token_matchers[i].pattern,
-                0,
-                &error,
-                &error_offset,
-                NULL);
-        if (token_matchers[i].compiled_pattern == NULL) {
-            char error_message[500];
-            sprintf(error_message, "PCRE compilation failed for pattern %s offset %d: %s\n", token_matchers[i].pattern,
-                    error_offset, error);
-            panic(&me, error_message);
-        }
-    }
-
-    while (*current != '\0') {
-        if (*current == '\n') {
-            me.line++;
-        }
-
-        bool matched = false;
-
-        for (int32_t i = 0; i < ARRAY_LEN(token_matchers); i++) {
-            int ovector[10];
-            int rc = pcre_exec(
-                    token_matchers[i].compiled_pattern,
-                    NULL,
-                    current,
-                    (int) strlen(current),
-                    0,
-                    0,
-                    ovector,
-                    10);
-            if (rc < 0) {
-                // no match
-                continue;
-            }
-
-            matched = true;
-
-            int32_t full_capture_size = ovector[1] - ovector[0];
-            void* arg = NULL;
-            if (rc > 1) {
-                if (token_matchers[i].argument_handler != NULL) {
-                    int len = ovector[3] - ovector[2];
-                    int offset = ovector[2];
-                    arg = token_matchers[i].argument_handler(arena, len, current + offset);
+    const char* iterator = text;
+    uint32_t line = 1;
+    while (*iterator != '\0') {
+        if (*iterator == '\n') line++;
+        token* new_token;
+        if (0) {
+        } else if (is_character_set(*iterator, " \\n\\t")) {
+            // Ignored.
+            iterator += 1;
+            continue;
+        } else if (strncmp(iterator, "{", 1) == 0) {
+            new_token = arena_alloc(arena, sizeof(token));
+            new_token->id = TOKEN_OPEN_CURLY;
+            new_token->line = line;
+            const char* start = iterator;
+            iterator += 1;
+            const char* end = iterator;
+            new_token->value = create_null_terminated_string(arena, start, end);
+        } else if (strncmp(iterator, "}", 1) == 0) {
+            new_token = arena_alloc(arena, sizeof(token));
+            new_token->id = TOKEN_CLOSE_CURLY;
+            new_token->line = line;
+            const char* start = iterator;
+            iterator += 1;
+            const char* end = iterator;
+            new_token->value = create_null_terminated_string(arena, start, end);
+        } else if (strncmp(iterator, "[", 1) == 0) {
+            new_token = arena_alloc(arena, sizeof(token));
+            new_token->id = TOKEN_OPEN_SQUARE;
+            new_token->line = line;
+            const char* start = iterator;
+            iterator += 1;
+            const char* end = iterator;
+            new_token->value = create_null_terminated_string(arena, start, end);
+        } else if (strncmp(iterator, "]", 1) == 0) {
+            new_token = arena_alloc(arena, sizeof(token));
+            new_token->id = TOKEN_CLOSE_SQUARE;
+            new_token->line = line;
+            const char* start = iterator;
+            iterator += 1;
+            const char* end = iterator;
+            new_token->value = create_null_terminated_string(arena, start, end);
+        } else if (strncmp(iterator, ",", 1) == 0) {
+            new_token = arena_alloc(arena, sizeof(token));
+            new_token->id = TOKEN_COMMA;
+            new_token->line = line;
+            const char* start = iterator;
+            iterator += 1;
+            const char* end = iterator;
+            new_token->value = create_null_terminated_string(arena, start, end);
+        } else if (strncmp(iterator, ":", 1) == 0) {
+            new_token = arena_alloc(arena, sizeof(token));
+            new_token->id = TOKEN_COLON;
+            new_token->line = line;
+            const char* start = iterator;
+            iterator += 1;
+            const char* end = iterator;
+            new_token->value = create_null_terminated_string(arena, start, end);
+        } else if (strncmp(iterator, "\"", 1) == 0) {
+            new_token = arena_alloc(arena, sizeof(token));
+            new_token->id = TOKEN_STRLIT;
+            new_token->line = line;
+            const char* start = iterator;
+            iterator += 1;
+            bool loop = true;
+            while(loop) {
+                if (is_character_range(*iterator, 'a', 'z') || is_character_range(*iterator, 'A', 'Z') || is_character_range(*iterator, '0', '9') || strncmp(iterator, "\\\"", 2) == 0 || is_character_set(*iterator, "!@#$%^&*()`~/*-\\")) {
+                    if (is_character_range(*iterator, 'a', 'z')) {
+                        iterator += 1;
+                    } else if (is_character_range(*iterator, 'A', 'Z')) {
+                        iterator += 1;
+                    } else if (is_character_range(*iterator, '0', '9')) {
+                        iterator += 1;
+                    } else if (strncmp(iterator, "\\\"", 2) == 0) {
+                        iterator += 2;
+                    } else if (is_character_set(*iterator, "!@#$%^&*()`~/*-\\")) {
+                        iterator += 1;
+                    }
+                    continue;
                 }
+                loop = false;
             }
-
-            // token none must not be added to the list.
-            if (token_matchers[i].id != TOKEN_NONE) {
-                new_token(&me, token_matchers[i].id, arg);
+            if(!(strncmp(iterator, "\"", 1) == 0)) {;
+                panic("Unexpected character");
             }
-
-            current += full_capture_size;
+            iterator += 1;
+            const char* end = iterator;
+            new_token->value = create_null_terminated_string(arena, start, end);
+        } else if (is_character_range(*iterator, '0', '9')) {
+            new_token = arena_alloc(arena, sizeof(token));
+            new_token->id = TOKEN_INTLIT;
+            new_token->line = line;
+            const char* start = iterator;
+            bool loop = true;
+            while(loop) {
+                if (is_character_range(*iterator, '0', '9')) {
+                    iterator += 1;
+                    continue;
+                }
+                loop = false;
+            }
+            const char* end = iterator;
+            new_token->value = create_null_terminated_string(arena, start, end);
         }
-
-        if (!matched) {
-            char error_message[100];
-            sprintf(error_message, "Unexpected character: %c", *current);
-            panic(&me, error_message);
-        }
+        linked_list_append(output, (list_item*)new_token);
     }
 }
+

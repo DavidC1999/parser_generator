@@ -22,37 +22,58 @@ class NodeName:
 
 token_types = [
     TokenType(
+        name=None,
+        expression=[CharacterSet(" \\n\\t")],
+        ignored=True
+    ),
+    TokenType(
         name=TokenName.open_curly,
-        expression=[]
+        expression=[String("{")]
     ),
     TokenType(
         name=TokenName.close_curly,
-        expression=[]
+        expression=[String("}")]
     ),
     TokenType(
         name=TokenName.open_square,
-        expression=[]
+        expression=[String("[")]
     ),
     TokenType(
         name=TokenName.close_square,
-        expression=[]
+        expression=[String("]")]
     ),
     TokenType(
         name=TokenName.comma,
-        expression=[]
+        expression=[String(",")]
     ),
     TokenType(
         name=TokenName.colon,
-        expression=[]
+        expression=[String(":")]
     ),
     TokenType(
         name=TokenName.strlit,
-        expression=[],
+        expression=[
+            String("\""),
+            Repeat(
+                OneOf(
+                    CharacterRange("a", "z"),
+                    CharacterRange("A", "Z"),
+                    CharacterRange("0", "9"),
+                    String("\\\""),
+                    CharacterSet("!@#$%^&*()`~/*-\\"),
+                )
+            ),
+            String("\"")
+        ],
         value_type="const char*"
     ),
     TokenType(
         name=TokenName.intlit,
-        expression=[],
+        expression=[
+            Repeat(
+                CharacterRange("0", "9")
+            )
+        ],
         value_type="int64_t"
     ),
 ]

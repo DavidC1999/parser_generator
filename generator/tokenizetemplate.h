@@ -8,17 +8,7 @@
 #include "memory_arena.h"
 #include "linked_list.h"
 
-typedef enum token_id {
-    TOKEN_OPEN_CURLY,
-    TOKEN_CLOSE_CURLY,
-    TOKEN_OPEN_SQUARE,
-    TOKEN_CLOSE_SQUARE,
-    TOKEN_COMMA,
-    TOKEN_COLON,
-    TOKEN_STRLIT,
-    TOKEN_INTLIT,
-} token_id;
-
+[enum]
 
 typedef struct token {
     token_id id;
