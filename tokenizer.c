@@ -53,8 +53,7 @@ void tokenize(memory_arena* arena, linked_list* output, const char* text) {
     while (*iterator != '\0') {
         if (*iterator == '\n') line++;
         token* new_token;
-        if (0) {
-        } else if (is_character_set(*iterator, " \n\t")) {
+        if (is_character_set(*iterator, " \n\t")) {
             // Ignored.
             iterator += 1;
             continue;

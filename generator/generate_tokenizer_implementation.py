@@ -151,18 +151,21 @@ def generate_tokenizer_implementation(template_dir: str):
     func += "        if (*iterator == '\\n') line++;\n"
     func += "        token* new_token;\n"
 
-    func += "        if (0) {\n"
-    func += "        }"
+    func += "        "
+    ifs = []
     for token_type in token_types:
         if len(token_type.expression) == 0:
             raise "Token must have an expression"
-        
-        func += f" else if ({generate_condition(token_type.expression[0])}) {{\n"
+        new_if = ""
+        new_if += f"if ({generate_condition(token_type.expression[0])}) {{\n"
         if token_type.ignored:
-            func += generate_ignored_token_type_handling(token_type)
+            new_if += generate_ignored_token_type_handling(token_type)
         else:
-            func += generate_token_type_handling(token_type)
-        func += f"        }}"
+            new_if += generate_token_type_handling(token_type)
+        new_if += f"        }}"
+        ifs.append(new_if)
+    func += " else ".join(ifs)
+
     func += "\n"
     func += "        linked_list_append(output, (list_item*)new_token);\n"
     func += "    }\n"
