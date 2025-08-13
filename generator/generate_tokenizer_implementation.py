@@ -168,7 +168,9 @@ def generate_tokenizer_implementation(template_dir: str):
         ifs.append(new_if)
     func += " else ".join(ifs)
 
-    func += "\n"
+    func += " else {\n"
+    func += "            panic(line, \"Unexpected character\");\n"
+    func += "        }\n"
     func += "        linked_list_append(output, (list_item*)new_token);\n"
     func += "    }\n"
     func += "}\n"

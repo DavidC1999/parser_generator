@@ -32,6 +32,17 @@ static int64_t convert_to_int(uint32_t line, memory_arena* arena, const char* st
     return output;
 }
 
+static double convert_to_double(uint32_t line, memory_arena* arena, const char* start, const char* end) {
+    char* end_ptr;
+    double output = strtod(start, &end_ptr);
+
+    if (end_ptr != end) {
+        panic(line, "Unable to parse double");
+    }
+
+    return output;
+}
+
 static bool is_character_range(char c, char from, char to) {
     return c >= from && c <= to;
 }
