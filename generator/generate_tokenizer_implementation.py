@@ -48,7 +48,11 @@ def generate_condition(atom: Atom) -> str:
     else:
         raise f"Unsupported in tokenizer: {atom.atom_type}"
 
+counter = 0
+
 def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False) -> str:
+    global counter
+
     indent = " " * indent_num
     code = ""
 
@@ -72,15 +76,17 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
     elif atom.is_repeat():
         repeat: Repeat = atom
         
-        code += f"{indent}bool loop = true;\n"
-        code += f"{indent}while(loop) {{\n"
+        code += f"{indent}bool loop_{counter} = true;\n"
+        code += f"{indent}while(loop_{counter}) {{\n"
         for repeat_atom in repeat.atoms:
             code += f"{indent}    if ({generate_condition(repeat_atom)}) {{\n"
             code += generate_atom_handling(indent_num + 8, repeat_atom, skip_check=True)
             code += f"{indent}        continue;\n"
             code += f"{indent}    }}\n"
-            code += f"{indent}    loop = false;\n"
+            code += f"{indent}    loop_{counter} = false;\n"
         code += f"{indent}}}\n"
+
+        counter += 1
     elif atom.is_oneof():
         oneof: OneOf = atom
 
@@ -104,8 +110,8 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
     elif atom.is_sequence():
         sequence: Sequence = atom
         skip_check = True
-        for atom in sequence.atoms:
-            code += generate_atom_handling(12, atom, skip_check)
+        for sequence_atom in sequence.atoms:
+            code += generate_atom_handling(12, sequence_atom, skip_check)
             skip_check = False
     else:
         raise f"Unsupported in tokenizer: {atom.atom_type}"

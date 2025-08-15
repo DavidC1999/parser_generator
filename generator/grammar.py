@@ -9,6 +9,7 @@ class TokenName:
     colon = "colon"
     strlit = "strlit"
     intlit = "intlit"
+    floatlit = "floatlit"
 
 class NodeName:
     json = "json"
@@ -71,6 +72,15 @@ token_types = [
         name=TokenName.intlit,
         expression=Repeat(
             CharacterRange("0", "9")
+        ).bind_to_field(),
+        field=Int64Field()
+    ),
+    TokenType(
+        name=TokenName.floatlit,
+        expression=Sequence(
+            Repeat(CharacterRange("0", "9")),
+            String("."),
+            Repeat(CharacterRange("0", "9"))
         ).bind_to_field(),
         field=Int64Field()
     ),
