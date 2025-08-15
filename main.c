@@ -21,8 +21,8 @@ int main() {
 
     printf("%s", buffer);
 
-    uint8_t arena_buffer[2048];
-    memory_arena arena = {.size = 0, .buffer = arena_buffer, .capacity = 2048};
+    uint8_t arena_buffer[4096];
+    memory_arena arena = {.size = 0, .buffer = arena_buffer, .capacity = 4096};
     linked_list tokens = {0};
     tokenize(&arena, &tokens, buffer);
 

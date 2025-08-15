@@ -50,7 +50,7 @@ def generate_condition(atom: Atom) -> str:
 
 counter = 0
 
-def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False) -> str:
+def generate_atom_handling(indent_num: int, atom: Atom, break_label:str, skip_check: bool = False) -> str:
     global counter
 
     indent = " " * indent_num
@@ -64,13 +64,15 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
         _, length = escape_c_string(string.value)
         if not skip_check:
             code += f"{indent}if(!({generate_condition(atom)})) {{;\n"
-            code += f"{indent}    panic(line, \"Unexpected character\");\n"
+            code += f"{indent}    iterator = restore_point;\n"
+            code += f"{indent}    goto {break_label};\n"
             code += f"{indent}}}\n"
         code += f"{indent}iterator += {length};\n"
     elif atom.is_character_range() or atom.is_character_set():
         if not skip_check:
             code += f"{indent}if(!({generate_condition(atom)})) {{;\n"
-            code += f"{indent}    panic(line, \"Unexpected character\");\n"
+            code += f"{indent}    iterator = restore_point;\n"
+            code += f"{indent}    goto {break_label};\n"
             code += f"{indent}}}\n"
         code += f"{indent}iterator += 1;\n"
     elif atom.is_repeat():
@@ -80,7 +82,7 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
         code += f"{indent}while(loop_{counter}) {{\n"
         for repeat_atom in repeat.atoms:
             code += f"{indent}    if ({generate_condition(repeat_atom)}) {{\n"
-            code += generate_atom_handling(indent_num + 8, repeat_atom, skip_check=True)
+            code += generate_atom_handling(indent_num + 8, repeat_atom, break_label, skip_check=True)
             code += f"{indent}        continue;\n"
             code += f"{indent}    }}\n"
             code += f"{indent}    loop_{counter} = false;\n"
@@ -89,12 +91,12 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
         counter += 1
     elif atom.is_oneof():
         oneof: OneOf = atom
-
+        
         parts = []
         for oneof_atom in oneof.atoms:
             part = ""
             part += f"if ({generate_condition(oneof_atom)}) {{\n"
-            part += generate_atom_handling(indent_num + 4, oneof_atom, skip_check=True)
+            part += generate_atom_handling(indent_num + 4, oneof_atom, break_label, skip_check=True)
             part += f"{indent}}}"
 
             parts.append(part)
@@ -103,7 +105,8 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
   
         if not skip_check:
             code += f" else {{\n"
-            code += f"{indent}    panic(line, \"Unexpected character\");\n"
+            code += f"{indent}    iterator = restore_point;\n"
+            code += f"{indent}    goto {break_label};\n"
             code += f"{indent}}}"
         
         code += "\n"
@@ -111,7 +114,7 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
         sequence: Sequence = atom
         skip_check = True
         for sequence_atom in sequence.atoms:
-            code += generate_atom_handling(12, sequence_atom, skip_check)
+            code += generate_atom_handling(indent_num, sequence_atom, break_label, skip_check)
             skip_check = False
     else:
         raise f"Unsupported in tokenizer: {atom.atom_type}"
@@ -127,29 +130,33 @@ def generate_interpret_field(token_type: TokenType):
         return "convert_to_string(line, arena, start, end)"
     if field.is_integer():
         return f"({field.type})convert_to_int(line, arena, start, end)"
+    if field.is_double():
+        return f"convert_to_double(line, arena, start, end)"
     
     raise "Unable to interpret token field data"
 
 
-def generate_token_type_handling(token_type: TokenType):
+def generate_token_type_handling(indent_num: int, token_type: TokenType, break_label: str):
+    indent = " " * indent_num
     code = ""
-    code += f"            new_token = arena_alloc(arena, sizeof(token));\n"
-    code += f"            new_token->id = {token_enum_name(token_type)};\n"
-    code += f"            new_token->line = line;\n"
-    code += generate_atom_handling(12, token_type.expression, skip_check=True)
+    code += f"{indent}new_token = arena_alloc(arena, sizeof(token));\n"
+    code += f"{indent}new_token->id = {token_enum_name(token_type)};\n"
+    code += f"{indent}new_token->line = line;\n"
+    code += generate_atom_handling(indent_num, token_type.expression, break_label, skip_check=True)
 
     if token_type.field is not None:
         if token_type.field.name is not None:
             raise "Token fields must not have a name"
-        code += f"            new_token->{token_field_name(token_type)} = {generate_interpret_field(token_type)};\n"
+        code += f"{indent}new_token->{token_field_name(token_type)} = {generate_interpret_field(token_type)};\n"
 
     return code
 
-def generate_ignored_token_type_handling(token_type: TokenType):
+def generate_ignored_token_type_handling(indent_num: int, token_type: TokenType, break_label: str):
+    indent = " " * indent_num
     code = ""
-    code += "            // Ignored.\n"
-    code += generate_atom_handling(12, token_type.expression, skip_check=True)
-    code += f"            continue;\n"
+    code += f"{indent}// Ignored.\n"
+    code += generate_atom_handling(indent_num, token_type.expression, break_label, skip_check=True)
+    code += f"{indent}continue;\n"
 
     return code
 
@@ -158,29 +165,26 @@ def generate_tokenizer_implementation(template_dir: str):
     func += "void tokenize(memory_arena* arena, linked_list* output, const char* text) {\n"
     func += "    const char* iterator = text;\n"
     func += "    uint32_t line = 1;\n"
+    func += "    const char* restore_point;\n"
     func += "    while (*iterator != '\\0') {\n"
     func += "        if (*iterator == '\\n') line++;\n"
     func += "        token* new_token;\n"
 
-    func += "        "
-    ifs = []
     for token_type in token_types:
         if token_type.expression == None:
             raise "Token must have an expression"
-        new_if = ""
-        new_if += f"if ({generate_condition(token_type.expression)}) {{\n"
+        func += f"        if ({generate_condition(token_type.expression)}) {{\n"
+        func += f"            restore_point = iterator;\n"
         if token_type.ignored:
-            new_if += generate_ignored_token_type_handling(token_type)
+            func += generate_ignored_token_type_handling(12, token_type, f"break_{token_type.name}")
         else:
-            new_if += generate_token_type_handling(token_type)
-        new_if += f"        }}"
-        ifs.append(new_if)
-    func += " else ".join(ifs)
+            func += generate_token_type_handling(12, token_type, f"break_{token_type.name}")
+        func += f"            linked_list_append(output, (list_item*)new_token);\n"
+        func += f"            continue;\n"
+        func += f"        }}\n"
+        func += f"break_{token_type.name}:\n\n"
 
-    func += " else {\n"
-    func += "            panic(line, \"Unexpected character\");\n"
-    func += "        }\n"
-    func += "        linked_list_append(output, (list_item*)new_token);\n"
+    func += "        panic(line, \"Unexpected character\");\n"
     func += "    }\n"
     func += "}\n"
 

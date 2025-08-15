@@ -9,12 +9,13 @@ class TokenName:
     colon = "colon"
     strlit = "strlit"
     intlit = "intlit"
-    floatlit = "floatlit"
+    decimallit = "decimallit"
 
 class NodeName:
     json = "json"
     primitive = "primitive"
-    number = "number"
+    integer = "integer"
+    decimal = "decimal"
     string = "string"
     container = "container"
     array = "array"
@@ -69,18 +70,18 @@ token_types = [
         field=StringField()
     ),
     TokenType(
-        name=TokenName.intlit,
-        expression=Repeat(
-            CharacterRange("0", "9")
-        ).bind_to_field(),
-        field=Int64Field()
-    ),
-    TokenType(
-        name=TokenName.floatlit,
+        name=TokenName.decimallit,
         expression=Sequence(
             Repeat(CharacterRange("0", "9")),
             String("."),
             Repeat(CharacterRange("0", "9"))
+        ).bind_to_field(),
+        field=DoubleField()
+    ),
+    TokenType(
+        name=TokenName.intlit,
+        expression=Repeat(
+            CharacterRange("0", "9")
         ).bind_to_field(),
         field=Int64Field()
     ),
@@ -103,16 +104,24 @@ grammar = [
             NodeField(name="subnode")
         ],
         expression=OneOf(
-            Node(NodeName.number),
+            Node(NodeName.integer),
+            Node(NodeName.decimal),
             Node(NodeName.string)
         ).bind_to("subnode")
     ),
     NodeType(
-        name=NodeName.number,
+        name=NodeName.integer,
         fields=[
             Int64Field(name="value")
         ],
         expression=Token(TokenName.intlit).bind_to("value")
+    ),
+    NodeType(
+        name=NodeName.decimal,
+        fields=[
+            DoubleField(name="value")
+        ],
+        expression=Token(TokenName.decimallit).bind_to("value")
     ),
     NodeType(
         name=NodeName.string,

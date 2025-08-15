@@ -130,6 +130,9 @@ class Field:
     def is_integer(self):
         return self.type in ["int64_t"]
     
+    def is_double(self):
+        return self.type == "double"
+    
     def is_string(self):
         return self.type == "const char*"
     
@@ -147,6 +150,10 @@ class Field:
 class Int64Field(Field):
     def __init__(self, name: str = None):
         super().__init__("int64_t", name)
+
+class DoubleField(Field):
+    def __init__(self, name: str = None):
+        super().__init__("double", name)
 
 class StringField(Field):
     def __init__(self, name: str = None):
