@@ -163,7 +163,7 @@ class NodeListField(Field):
 noderegistrations = {}
 
 class NodeType:
-    def __init__(self, name: str, fields: List[Field], expression: List[Atom]):
+    def __init__(self, name: str, fields: List[Field], expression: Atom):
         self.name = name
         self.fields = fields
         self.expression = expression

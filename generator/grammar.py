@@ -82,61 +82,51 @@ grammar = [
         fields=[
             NodeField(name="subnode")
         ],
-        expression=[
-            OneOf(
-                Node(NodeName.primitive),
-                Node(NodeName.container),
-            ).bind_to("subnode")
-        ]
+        expression=OneOf(
+            Node(NodeName.primitive),
+            Node(NodeName.container),
+        ).bind_to("subnode")
     ),
     NodeType(
         name=NodeName.primitive,
         fields=[
             NodeField(name="subnode")
         ],
-        expression=[
-            OneOf(
-                Node(NodeName.number),
-                Node(NodeName.string)
-            ).bind_to("subnode")
-        ]
+        expression=OneOf(
+            Node(NodeName.number),
+            Node(NodeName.string)
+        ).bind_to("subnode")
     ),
     NodeType(
         name=NodeName.number,
         fields=[
             Int64Field(name="value")
         ],
-        expression=[
-            Token(TokenName.intlit).bind_to("value")
-        ]
+        expression=Token(TokenName.intlit).bind_to("value")
     ),
     NodeType(
         name=NodeName.string,
         fields=[
             StringField("value")
         ],
-        expression=[
-            Token(TokenName.strlit).bind_to("value")
-        ]
+        expression=Token(TokenName.strlit).bind_to("value")
     ),
     NodeType(
         name=NodeName.container,
         fields=[
             NodeField(name="subnode")
         ],
-        expression=[
-            OneOf(
-                Node(NodeName.object),
-                Node(NodeName.array),
-            ).bind_to("subnode")
-        ]
+        expression=OneOf(
+            Node(NodeName.object),
+            Node(NodeName.array),
+        ).bind_to("subnode")
     ),
     NodeType(
         name=NodeName.array,
         fields=[
             NodeListField("items")
         ],
-        expression=[
+        expression=Sequence(
             Token(TokenName.open_square),
             Node(NodeName.json).bind_to("items"),
             Repeat(
@@ -144,14 +134,14 @@ grammar = [
                 Node(NodeName.json).bind_to("items"),
             ),
             Token(TokenName.close_square)
-        ]
+        )
     ),
     NodeType(
         name=NodeName.object,
         fields=[
             NodeListField("members")
         ],
-        expression=[
+        expression=Sequence(
             Token(TokenName.open_curly),
             Node(NodeName.member).bind_to("members"),
             Repeat(
@@ -159,7 +149,7 @@ grammar = [
                 Node(NodeName.member).bind_to("members"),
             ),
             Token(TokenName.close_curly)
-        ]
+        )
     ),
     NodeType(
         name=NodeName.member,
@@ -167,10 +157,10 @@ grammar = [
            StringField("key"),
            NodeField("value")
         ],
-        expression = [
+        expression = Sequence(
             Token(TokenName.strlit).bind_to("key"),
             Token(TokenName.colon),
             Node(NodeName.json).bind_to("value")
-        ]
+        )
     ),
 ]

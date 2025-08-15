@@ -2,18 +2,19 @@ from grammar import *
 from name_generators import *
 
 def _get_possible_tokens(atom: Atom) -> List[Token]:
+    if atom is None:
+        return []
     if atom.is_token():
         return [atom]
     
     if atom.is_noderef():
         as_node_ref: Node = atom
         as_node: NodeType = as_node_ref.get_node_type()
-        if len(as_node.expression) == 0: return[]
-        return _get_possible_tokens(as_node.expression[0])
+        return _get_possible_tokens(as_node.expression)
     
     if atom.is_repeat():
         as_repeat: Repeat = atom
-        if len(as_repeat.expression) == 0: return[]
+        if len(as_repeat.atoms) == 0: return[]
         return _get_possible_tokens(as_repeat.atoms[0])
     
     if atom.is_oneof():
@@ -22,6 +23,12 @@ def _get_possible_tokens(atom: Atom) -> List[Token]:
         for a in as_oneof.atoms:
             ret_val += _get_possible_tokens(a)
         return ret_val
+    
+    if atom.is_sequence():
+        as_sequence: Sequence = atom
+        if len(as_sequence.atoms) == 0:
+            return []
+        return _get_possible_tokens(as_sequence.atoms[0])
 
         
 
@@ -82,14 +89,17 @@ def _generate_parse_atom(indent_num:int, node: NodeType, atom: Atom):
 
                 code += f"{indent}    case {enum_name}:\n"
 
-            # code += f"{indent}        linked_list_append((linked_list*)&ret_val->subnodes, (list_item*)parse_{referenced_node.name}(arena, tokens));\n"
             code += _generate_parse_atom(indent_num + 8, node, referenced_node)
             code += f"{indent}        break;\n"
         
         code += f"{indent}    default:\n"
         code += f"{indent}        panic(\"Unexpected token\", current_token(tokens));\n"
         code += f"{indent}}}\n"
-        
+    elif atom.is_sequence():
+        sequence: Sequence = atom
+        for atom in sequence.atoms:
+            code += _generate_parse_atom(indent_num, node, atom)
+
     return code
 
 
@@ -108,8 +118,7 @@ def generate_parse_function(node: NodeType):
         if field.is_node_list():
             code += f"    linked_list_clear((linked_list*)&ret_val->{node.name}.{field.name});\n"
 
-    for atom in node.expression:
-        code += _generate_parse_atom(4, node, atom)
+    code += _generate_parse_atom(4, node, node.expression)
         
     code += "    return ret_val;\n"
     code += "}\n\n"
