@@ -23,36 +23,36 @@ class NodeName:
 token_types = [
     TokenType(
         name=None,
-        expression=[CharacterSet(" \n\t")],
+        expression=CharacterSet(" \n\t"),
         ignored=True
     ),
     TokenType(
         name=TokenName.open_curly,
-        expression=[String("{")]
+        expression=String("{")
     ),
     TokenType(
         name=TokenName.close_curly,
-        expression=[String("}")]
+        expression=String("}")
     ),
     TokenType(
         name=TokenName.open_square,
-        expression=[String("[")]
+        expression=String("[")
     ),
     TokenType(
         name=TokenName.close_square,
-        expression=[String("]")]
+        expression=String("]")
     ),
     TokenType(
         name=TokenName.comma,
-        expression=[String(",")]
+        expression=String(",")
     ),
     TokenType(
         name=TokenName.colon,
-        expression=[String(":")]
+        expression=String(":")
     ),
     TokenType(
         name=TokenName.strlit,
-        expression=[
+        expression=Sequence(
             String("\""),
             Repeat(
                 OneOf(
@@ -64,16 +64,14 @@ token_types = [
                 )
             ).bind_to_field(),
             String("\"")
-        ],
+        ),
         field=StringField()
     ),
     TokenType(
         name=TokenName.intlit,
-        expression=[
-            Repeat(
-                CharacterRange("0", "9")
-            ).bind_to_field()
-        ],
+        expression=Repeat(
+            CharacterRange("0", "9")
+        ).bind_to_field(),
         field=Int64Field()
     ),
 ]

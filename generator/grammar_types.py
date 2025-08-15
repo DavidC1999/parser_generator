@@ -26,6 +26,9 @@ class Atom:
     def is_repeat(self):
         return self.atom_type == "repeat"
     
+    def is_sequence(self):
+        return self.atom_type == "sequence"
+    
     def is_noderef(self):
         return self.atom_type == "noderef"
     
@@ -59,6 +62,13 @@ class Repeat(AtomList):
     
     def repr(self):
         return "OneOf"
+    
+class Sequence(AtomList):
+    def __init__(self, *atoms: List[Atom]):
+        super().__init__("sequence", atoms)
+    
+    def repr(self):
+        return "Sequence"
 
 class OneOf(AtomList):
     def __init__(self, *atoms: List[Atom]):
@@ -77,7 +87,7 @@ def ensure_char(*char_list: List[str]):
                 raise f"Invalid character: {char}"
 
 class TokenType:
-    def __init__(self, name: str, expression: List[Atom], **kwargs):
+    def __init__(self, name: str, expression: Atom, **kwargs):
         self.name = name
         self.expression = expression
         self.field = None

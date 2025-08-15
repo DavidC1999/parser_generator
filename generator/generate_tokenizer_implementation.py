@@ -42,6 +42,9 @@ def generate_condition(atom: Atom) -> str:
         if len(oneof.atoms) == 0:
             raise "OneOf must have at least one atom"
         return " || ".join([generate_condition(a) for a in oneof.atoms])
+    elif atom.is_sequence():
+        sequence: Sequence = atom
+        return generate_condition(sequence.atoms[0])
     else:
         raise f"Unsupported in tokenizer: {atom.atom_type}"
 
@@ -98,6 +101,12 @@ def generate_atom_handling(indent_num: int, atom: Atom, skip_check: bool = False
             code += f"{indent}}}"
         
         code += "\n"
+    elif atom.is_sequence():
+        sequence: Sequence = atom
+        skip_check = True
+        for atom in sequence.atoms:
+            code += generate_atom_handling(12, atom, skip_check)
+            skip_check = False
     else:
         raise f"Unsupported in tokenizer: {atom.atom_type}"
     
@@ -121,10 +130,7 @@ def generate_token_type_handling(token_type: TokenType):
     code += f"            new_token = arena_alloc(arena, sizeof(token));\n"
     code += f"            new_token->id = {token_enum_name(token_type)};\n"
     code += f"            new_token->line = line;\n"
-    skip_check = True
-    for atom in token_type.expression:
-        code += generate_atom_handling(12, atom, skip_check)
-        skip_check = False
+    code += generate_atom_handling(12, token_type.expression, skip_check=True)
 
     if token_type.field is not None:
         if token_type.field.name is not None:
@@ -135,11 +141,8 @@ def generate_token_type_handling(token_type: TokenType):
 
 def generate_ignored_token_type_handling(token_type: TokenType):
     code = ""
-    skip_check = True
     code += "            // Ignored.\n"
-    for atom in token_type.expression:
-        code += generate_atom_handling(12, atom, skip_check)
-        skip_check = False
+    code += generate_atom_handling(12, token_type.expression, skip_check=True)
     code += f"            continue;\n"
 
     return code
@@ -156,10 +159,10 @@ def generate_tokenizer_implementation(template_dir: str):
     func += "        "
     ifs = []
     for token_type in token_types:
-        if len(token_type.expression) == 0:
+        if token_type.expression == None:
             raise "Token must have an expression"
         new_if = ""
-        new_if += f"if ({generate_condition(token_type.expression[0])}) {{\n"
+        new_if += f"if ({generate_condition(token_type.expression)}) {{\n"
         if token_type.ignored:
             new_if += generate_ignored_token_type_handling(token_type)
         else:
