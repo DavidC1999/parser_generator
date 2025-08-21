@@ -29,6 +29,12 @@ def _get_possible_tokens(atom: Atom) -> List[Token]:
         if len(as_sequence.atoms) == 0:
             return []
         return _get_possible_tokens(as_sequence.atoms[0])
+    
+    if atom.is_maybe():
+        as_maybe: Maybe = atom
+        return _get_possible_tokens(as_maybe.atom)
+    
+    raise Exception(f"Unexpected token: {atom.repr()}")
 
         
 
@@ -98,7 +104,19 @@ def _generate_parse_atom(indent_num:int, node: NodeType, atom: Atom):
         sequence: Sequence = atom
         for atom in sequence.atoms:
             code += _generate_parse_atom(indent_num, node, atom)
-
+    elif atom.is_maybe():
+        as_maybe: Maybe = atom
+        tokens = _get_possible_tokens(atom)
+        if len(tokens) == 0:
+            raise Exception(f"No possible tokens found for {atom.repr()}")
+        if len(tokens) > 1:
+            raise Exception("Unreachable")
+        token = tokens[0]
+        code += f"{indent}if (current_token(tokens)->id == {token_enum_name(token)}) {{\n"
+        code += _generate_parse_atom(indent_num + 4, node, as_maybe.atom)
+        code += f"{indent}}}\n"
+    else:
+        raise Exception(f"Unsupported atom type: {atom.repr()}")
     return code
 
 

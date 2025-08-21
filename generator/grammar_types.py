@@ -6,6 +6,7 @@ class Atom:
         self.binds_to = None
         self.bound_to_field = False
     
+    # Used for nodes since they may have multiple fields we have to distinguish which field to bind to
     def bind_to(self, target_name):
         self.binds_to = target_name
         return self
@@ -13,6 +14,7 @@ class Atom:
     def get_bound_to(self):
         return self.binds_to
     
+    # Used for tokens, since they are only allowed to have one field.
     def bind_to_field(self):
         self.bound_to_field = True
         return self
@@ -23,6 +25,9 @@ class Atom:
     def is_token(self):
         return self.atom_type == "token"
     
+    def is_maybe(self):
+        return self.atom_type == "maybe"
+
     def is_repeat(self):
         return self.atom_type == "repeat"
     
@@ -73,7 +78,6 @@ class Sequence(AtomList):
 class OneOf(AtomList):
     def __init__(self, *atoms: List[Atom]):
         super().__init__("oneof", atoms)
-
     
     def repr(self):
         return "OneOf"
@@ -198,3 +202,11 @@ class Token(Atom):
 
     def repr(self):
         return "Token"
+
+class Maybe(Atom):
+    def __init__(self, atom: Atom):
+        super().__init__("maybe")
+        self.atom = atom
+    
+    def repr(self):
+        return "Maybe"

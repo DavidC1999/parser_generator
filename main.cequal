@@ -1,6 +1,6 @@
 var test;
 
-func my_func()
+func my_func(a, b)
 {
   var anothervar;
 }

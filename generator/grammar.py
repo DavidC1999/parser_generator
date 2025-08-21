@@ -204,18 +204,16 @@ grammar = [
             Token(TokenName.keyword_func),
             Token(TokenName.symbol).bind_to("name"),
             Token(TokenName.open_round),
-            OneOf(
-                # TODO: This OneOf could be replaced with a Maybe() or somthing like that.
+            Maybe(
                 Sequence(
-                    Node(NodeName.func_param).bind_to("parameters"),
-                    Repeat(
-                        Token(TokenName.comma),
-                        Node(NodeName.func_param).bind_to("parameters")
-                    ),
-                    Token(TokenName.close_round),
+                Node(NodeName.func_param).bind_to("parameters"),
+                Repeat(
+                    Token(TokenName.comma),
+                    Node(NodeName.func_param).bind_to("parameters")
                 ),
-                Token(TokenName.close_round),
             ),
+            ),
+            Token(TokenName.close_round),
             Node(NodeName.compound_statement).bind_to("body")
         )
     ),
