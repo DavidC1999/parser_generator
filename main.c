@@ -7,7 +7,7 @@
 int main() {
     printf("Hello, World!\n");
 
-    FILE * f = fopen ("../test.json", "rb");
+    FILE * f = fopen ("../main.cequal", "rb");
 
     if (f == NULL) return 1;
 
@@ -26,7 +26,7 @@ int main() {
     linked_list tokens = {0};
     tokenize(&arena, &tokens, buffer);
 
-    node* root = parse_json(&arena, &tokens);
+    node* root = parse_program(&arena, &tokens);
 
     return 0;
 }

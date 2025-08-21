@@ -4,6 +4,7 @@ from name_generators import *
 def generate_tokenizer_header(template_dir: str):
     enum = ""
     enum += "typedef enum token_id {\n"
+    enum += "    TOKEN_NONE = 0,\n"
     
     for token_type in token_types:
         if token_type.ignored == False:

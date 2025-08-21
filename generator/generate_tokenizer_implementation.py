@@ -35,18 +35,18 @@ def generate_condition(atom: Atom) -> str:
     elif atom.is_repeat():
         repeat: Repeat = atom
         if len(repeat.atoms) == 0:
-            raise "Repeat must have at least one atom"
+            raise Exception("Repeat must have at least one atom")
         return generate_condition(repeat.atoms[0])
     elif atom.is_oneof():
         oneof: OneOf = atom
         if len(oneof.atoms) == 0:
-            raise "OneOf must have at least one atom"
+            raise Exception("OneOf must have at least one atom")
         return " || ".join([generate_condition(a) for a in oneof.atoms])
     elif atom.is_sequence():
         sequence: Sequence = atom
         return generate_condition(sequence.atoms[0])
     else:
-        raise f"Unsupported in tokenizer: {atom.atom_type}"
+        raise Exception(f"Unsupported in tokenizer: {atom.atom_type}")
 
 counter = 0
 
@@ -117,7 +117,7 @@ def generate_atom_handling(indent_num: int, atom: Atom, break_label:str, skip_ch
             code += generate_atom_handling(indent_num, sequence_atom, break_label, skip_check)
             skip_check = False
     else:
-        raise f"Unsupported in tokenizer: {atom.atom_type}"
+        raise Exception(f"Unsupported in tokenizer: {atom.atom_type}")
     
     if atom.is_bound_to_field():
         code += f"{indent}const char* end = iterator;\n"
@@ -133,7 +133,7 @@ def generate_interpret_field(token_type: TokenType):
     if field.is_double():
         return f"convert_to_double(line, arena, start, end)"
     
-    raise "Unable to interpret token field data"
+    raise Exception("Unable to interpret token field data")
 
 
 def generate_token_type_handling(indent_num: int, token_type: TokenType, break_label: str):
@@ -146,7 +146,7 @@ def generate_token_type_handling(indent_num: int, token_type: TokenType, break_l
 
     if token_type.field is not None:
         if token_type.field.name is not None:
-            raise "Token fields must not have a name"
+            raise Exception("Token fields must not have a name")
         code += f"{indent}new_token->{token_field_name(token_type)} = {generate_interpret_field(token_type)};\n"
 
     return code
@@ -172,7 +172,7 @@ def generate_tokenizer_implementation(template_dir: str):
 
     for token_type in token_types:
         if token_type.expression == None:
-            raise "Token must have an expression"
+            raise Exception("Token must have an expression")
         func += f"        if ({generate_condition(token_type.expression)}) {{\n"
         func += f"            restore_point = iterator;\n"
         if token_type.ignored:

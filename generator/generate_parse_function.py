@@ -58,13 +58,17 @@ def _generate_parse_atom(indent_num:int, node: NodeType, atom: Atom):
             elif field.is_node_list():
                 code += f"{indent}linked_list_append((linked_list*)&ret_val->{node.name}.{field.name}, (list_item*){parse_node_call});\n"
             else:
-                raise "binds_to of NodeReference must refer to a node-compatible type"
+                raise Exception("binds_to of NodeReference must refer to a node-compatible type")
 
     elif atom.is_repeat():
-        if not atom.atoms[0].is_token():
-            raise "First atom of repeat atom must be a token (for now)"
-        token = atom.atoms[0]
-        code += f"{indent}while (current_token(tokens)->id == {token_enum_name(token)}) {{\n"
+        tokens = _get_possible_tokens(atom)
+        if len(tokens) == 0:
+            raise Exception("Repeat must resolve to token")
+        
+        condition = " || ".join([f"current_token(tokens)->id == {token_enum_name(t)}" for t in tokens])
+
+        token = tokens[0]
+        code += f"{indent}while ({condition}) {{\n"
         for repeated_atom in atom.atoms:
             code += _generate_parse_atom(indent_num + 4, node, repeated_atom)
         code += f"{indent}}}\n"
@@ -74,22 +78,17 @@ def _generate_parse_atom(indent_num:int, node: NodeType, atom: Atom):
 
         found_token_names = []
         for idx, option in enumerate(oneof.atoms):
-            if not option.is_noderef():
-                raise "OneOf must only contain nodereferences"
-            
-            referenced_node: NodeType = oneof.atoms[idx]
-
             tokens = _get_possible_tokens(option)
             for token in tokens:
                 enum_name = token_enum_name(token)
                 if enum_name in found_token_names:
-                    raise "OneOf references do not resolve to unambiguous decision"
+                    raise Exception("OneOf references do not resolve to unambiguous decision")
                 
                 found_token_names.append(enum_name)
 
                 code += f"{indent}    case {enum_name}:\n"
 
-            code += _generate_parse_atom(indent_num + 8, node, referenced_node)
+            code += _generate_parse_atom(indent_num + 8, node, oneof.atoms[idx])
             code += f"{indent}        break;\n"
         
         code += f"{indent}    default:\n"
@@ -112,7 +111,7 @@ def generate_parse_function(node: NodeType):
 
     for field in node.fields:
         if field.name is None:
-            raise "Fields in nodes must have a name"
+            raise Exception("Fields in nodes must have a name")
 
     for field in node.fields:
         if field.is_node_list():

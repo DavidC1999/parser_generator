@@ -84,7 +84,7 @@ tokenregistrations = {}
 def ensure_char(*char_list: List[str]):
     for char in char_list:
         if char is None or len(char) != 1:
-                raise f"Invalid character: {char}"
+                raise Exception(f"Invalid character: {char}")
 
 class TokenType:
     def __init__(self, name: str, expression: Atom, **kwargs):

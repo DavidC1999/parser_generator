@@ -1,0 +1,6 @@
+var test;
+
+func my_func()
+{
+  var anothervar;
+}

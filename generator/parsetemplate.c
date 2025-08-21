@@ -12,6 +12,13 @@ static void panic(const char* message, token* item) {
 }
 
 static token* current_token(linked_list* tokens) {
+    static token empty = {
+        .id = TOKEN_NONE,
+    };
+    
+    if (tokens->current == NULL) {
+        return &empty;
+    }
     return (token*)tokens->current;
 }
 
